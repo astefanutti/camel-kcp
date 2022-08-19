@@ -22,18 +22,21 @@ import (
 	"fmt"
 	"math/rand"
 	"os"
+	"reflect"
 	"runtime"
 	"strconv"
 	"time"
 
+	"github.com/pkg/errors"
 	"go.uber.org/automaxprocs/maxprocs"
 
 	appsv1 "k8s.io/api/apps/v1"
 	batchv1 "k8s.io/api/batch/v1"
-	batchv1beta1 "k8s.io/api/batch/v1beta1"
 	coordination "k8s.io/api/coordination/v1"
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/fields"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/selection"
 	"k8s.io/client-go/rest"
@@ -132,6 +135,22 @@ func Run(ctx context.Context, cfg *rest.Config, newManager func(*rest.Config, ma
 	exitOnError(err, "cannot create Integration label selector")
 	selector := labels.NewSelector().Add(*hasIntegrationLabel)
 
+	selectors := cache.SelectorsByObject{
+		&corev1.Pod{}:        {Label: selector},
+		&appsv1.Deployment{}: {Label: selector},
+		&batchv1.Job{}:       {Label: selector},
+		&servingv1.Service{}: {Label: selector},
+	}
+
+	if ok, err := kubernetes.IsAPIResourceInstalled(c, batchv1.SchemeGroupVersion.String(), reflect.TypeOf(batchv1.CronJob{}).Name()); ok && err == nil {
+		selectors[&batchv1.CronJob{}] = struct {
+			Label labels.Selector
+			Field fields.Selector
+		}{
+			Label: selector,
+		}
+	}
+
 	mgr, err := newManager(c.GetConfig(), manager.Options{
 		Namespace:                     watchNamespace,
 		EventBroadcaster:              broadcaster,
@@ -144,13 +163,7 @@ func Run(ctx context.Context, cfg *rest.Config, newManager func(*rest.Config, ma
 		MetricsBindAddress:            ":" + strconv.Itoa(int(monitoringPort)),
 		NewCache: cache.BuilderWithOptions(
 			cache.Options{
-				SelectorsByObject: cache.SelectorsByObject{
-					&corev1.Pod{}:           {Label: selector},
-					&appsv1.Deployment{}:    {Label: selector},
-					&batchv1beta1.CronJob{}: {Label: selector},
-					&batchv1.Job{}:          {Label: selector},
-					&servingv1.Service{}:    {Label: selector},
-				},
+				SelectorsByObject: selectors,
 			},
 		),
 	})
@@ -159,7 +172,8 @@ func Run(ctx context.Context, cfg *rest.Config, newManager func(*rest.Config, ma
 	exitOnError(
 		mgr.GetFieldIndexer().IndexField(ctx, &corev1.Pod{}, "status.phase",
 			func(obj ctrl.Object) []string {
-				return []string{string(obj.(*corev1.Pod).Status.Phase)}
+				pod, _ := obj.(*corev1.Pod)
+				return []string{string(pod.Status.Phase)}
 			}),
 		"unable to set up field indexer for status.phase: %v",
 	)
@@ -173,9 +187,41 @@ func Run(ctx context.Context, cfg *rest.Config, newManager func(*rest.Config, ma
 	installCtx, installCancel := context.WithTimeout(ctx, 1*time.Minute)
 	defer installCancel()
 	install.OperatorStartupOptionalTools(installCtx, c, watchNamespace, operatorNamespace, logger)
+	exitOnError(findOrCreateIntegrationPlatform(installCtx, c, operatorNamespace), "failed to create integration platform")
 
 	logger.Info("Starting the manager")
 	exitOnError(mgr.Start(ctx), "manager exited non-zero")
+}
+
+// findOrCreateIntegrationPlatform create default integration platform in operator namespace if not already exists.
+func findOrCreateIntegrationPlatform(ctx context.Context, c client.Client, operatorNamespace string) error {
+	var platformName string
+	if defaults.OperatorID() != "" {
+		platformName = defaults.OperatorID()
+	} else {
+		platformName = platform.DefaultPlatformName
+	}
+
+	if pl, err := kubernetes.GetIntegrationPlatform(ctx, c, platformName, operatorNamespace); pl == nil || k8serrors.IsNotFound(err) {
+		defaultPlatform := v1.NewIntegrationPlatform(operatorNamespace, platformName)
+		if defaultPlatform.Labels == nil {
+			defaultPlatform.Labels = make(map[string]string)
+		}
+		defaultPlatform.Labels["camel.apache.org/platform.generated"] = "true"
+
+		if _, err := c.CamelV1().IntegrationPlatforms(operatorNamespace).Create(ctx, &defaultPlatform, metav1.CreateOptions{}); err != nil {
+			return err
+		}
+
+		// Make sure that IntegrationPlatform installed in operator namespace can be seen by others
+		if err := install.IntegrationPlatformViewerRole(ctx, c, operatorNamespace); err != nil && !k8serrors.IsAlreadyExists(err) {
+			return errors.Wrap(err, "Error while installing global IntegrationPlatform viewer role")
+		}
+	} else {
+		return err
+	}
+
+	return nil
 }
 
 // getWatchNamespace returns the Namespace the operator should be watching for changes.

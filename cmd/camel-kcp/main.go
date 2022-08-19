@@ -23,7 +23,6 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/go-logr/logr"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 
@@ -46,9 +45,11 @@ import (
 	// +kubebuilder:scaffold:imports
 
 	apisv1alpha1 "github.com/kcp-dev/kcp/pkg/apis/apis/v1alpha1"
+
+	logutil "github.com/apache/camel-k/pkg/util/log"
 )
 
-var logger logr.Logger
+var logger = logutil.Log.WithName("kcp")
 
 var options struct {
 	// The name of the APIExport
@@ -86,10 +87,8 @@ func init() {
 	klog.InitFlags(flag.CommandLine)
 	flag.Parse()
 
-	logger = ctrlzap.New(ctrlzap.UseFlagOptions(&opts))
-
-	log.SetLogger(logger)
-	klog.SetLogger(logger)
+	log.SetLogger(ctrlzap.New(ctrlzap.UseFlagOptions(&opts)))
+	klog.SetLogger(logger.AsLogger())
 }
 
 func main() {
