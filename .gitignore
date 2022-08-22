@@ -12,4 +12,22 @@
 *.out
 
 # Dependency directories (remove the comment below to include it)
-# vendor/
+vendor/
+
+#Ignore .kcp directory
+.kcp/
+
+#Ignore temporal directoryo
+tmp/
+
+# Ignore bin directory contents
+bin/*
+
+# Keep the bin directory
+!bin/.gitkeep
+
+# Ignore vscode logs
+.vscode/*.log
+
+# Ignore goland files
+.idea

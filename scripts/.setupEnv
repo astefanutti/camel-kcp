@@ -1,0 +1,13 @@
+# shellcheck shell=bash
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+BIN_DIR="${SCRIPT_DIR}/../bin"
+
+GOROOT=$(go env GOROOT)
+export GOROOT
+export KIND_BIN="${BIN_DIR}/kind"
+export KCP_BIN="${BIN_DIR}/kcp"
+export KUBECTL_KCP_BIN="${BIN_DIR}/kubectl-kcp"
+export KUSTOMIZE_BIN="${BIN_DIR}/kustomize"
+
+export GOROOT KIND_BIN KCP_BIN KUBECTL_KCP_BIN KUSTOMIZE_BIN

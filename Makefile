@@ -14,6 +14,7 @@
 # limitations under the License.
 
 KCP_BRANCH := release-0.7
+NUM_CLUSTERS := 2
 
 IMAGE_TAG_BASE ?= quay.io/astefanutti/camel-kcp
 IMAGE_TAG ?= latest
@@ -24,8 +25,11 @@ CLUSTERS_KUBECONFIG_DIR ?= $(shell pwd)/tmp
 
 # Setting SHELL to bash allows bash commands to be executed by recipes.
 # Options are set to exit when a recipe line exits non-zero or a piped command fails.
-SHELL = /usr/bin/env bash -o pipefail
-.SHELLFLAGS = -ec
+SHELL = /usr/bin/env bash
+.SHELLFLAGS := -eu -o pipefail -c
+.DELETE_ON_ERROR:
+MAKEFLAGS += --warn-undefined-variables
+MAKEFLAGS += --no-builtin-rules
 
 .PHONY: all
 all: build
@@ -39,8 +43,8 @@ help: ## Display this help
 ##@ Development
 
 .PHONY: clean
-clean: clean-ld-kubeconfig ## Clean up temporary files
-	-#rm -rf ./.kcp
+clean: ## Clean up temporary files
+	-rm -rf ./.kcp
 	-rm -f ./bin/*
 	-rm -rf ./tmp
 
@@ -109,22 +113,13 @@ generate-ld-config: $(LD_CONTROLLER_CONFIG_ENV) ## Generate local deployment fil
 clean-ld-env:
 	-rm -f $(LD_CONTROLLER_CONFIG_ENV)
 
-.PHONY: clean-ld-kubeconfig
-clean-ld-kubeconfig:
-	-rm -f $(LD_KCP_KUBECONFIG)
-
 .PHONY: clean-ld-config
-clean-ld-config: clean-ld-env clean-ld-kubeconfig ## Remove local deployment files
-
-LOCAL_SETUP_FLAGS=""
-ifeq ($(DO_BREW),true)
-	LOCAL_SETUP_FLAGS="-b"
-endif
+clean-ld-config: clean-ld-env ## Remove local deployment files
 
 .PHONY: local-setup
 local-setup: export KCP_VERSION=${KCP_BRANCH}
-local-setup: clean kind kcp kustomize build ## Setup kcp locally using kind
-	./utils/local-setup.sh -c ${NUM_CLUSTERS} ${LOCAL_SETUP_FLAGS}
+local-setup: clean kind kcp kustomize build ## Setup kcp locally with KinD clusters
+	./scripts/local-setup.sh -c ${NUM_CLUSTERS}
 
 ##@ Build Dependencies
 
@@ -142,7 +137,7 @@ KIND ?= $(LOCALBIN)/kind
 ## Tool Versions
 CONTROLLER_TOOLS_VERSION ?= v0.8.0
 KUSTOMIZE_VERSION ?= v4.5.4
-KIND_VERSION ?= v0.11.1
+KIND_VERSION ?= v0.14.0
 
 .PHONY: controller-gen
 controller-gen: $(CONTROLLER_GEN) ## Download controller-gen locally if necessary
