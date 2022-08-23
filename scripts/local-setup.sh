@@ -53,8 +53,6 @@ KIND_CLUSTER_PREFIX="kcp-cluster-"
 KCP_CONTROL_CLUSTER_NAME="${KIND_CLUSTER_PREFIX}control"
 ORG_WORKSPACE=root:default
 
-KUBECONFIG_KCP_ADMIN=.kcp/admin.kubeconfig
-
 : ${KCP_VERSION:="release-0.7"}
 KCP_SYNCER_IMAGE="ghcr.io/kcp-dev/kcp/syncer:${KCP_VERSION}"
 
@@ -65,13 +63,11 @@ done
 
 mkdir -p ${TEMP_DIR}
 
-[[ -n "$KUBECONFIG" ]] && KUBECONFIG="$KUBECONFIG" || KUBECONFIG="$HOME/.kube/config"
-
 createCluster() {
   cluster=$1;
   port80=$2;
   port443=$3;
-  cat <<EOF | ${KIND_BIN} create cluster --name "${cluster}" --config=-
+  cat <<EOF | ${KIND_BIN} create cluster --name "${cluster}" --kubeconfig ${TEMP_DIR}/"${cluster}".kubeconfig --config=-
 kind: Cluster
 apiVersion: kind.x-k8s.io/v1alpha4
 nodes:
@@ -91,22 +87,17 @@ nodes:
     hostPort: ${port443}
     protocol: TCP
 EOF
-
-  ${KIND_BIN} get kubeconfig --name="${cluster}" > ${TEMP_DIR}/"${cluster}".kubeconfig
 }
 
 createSyncTarget() {
   [[ -n "$4" ]] && target=${4} || target=${1}
-  echo "Creating SyncTarget (${target})"
   createCluster $1 $2 $3
 
+  kubectl create namespace kcp-syncer --dry-run=client -o yaml | kubectl apply -f -
+  ${KUBECTL_KCP_BIN} workload sync "${target}" --kcp-namespace kcp-syncer --syncer-image=${KCP_SYNCER_IMAGE} --output-file ${TEMP_DIR}/"${target}"-syncer.yaml
+
   echo "Deploying kcp syncer to ${1}"
-  KUBECONFIG=${KUBECONFIG_KCP_ADMIN} kubectl create namespace kcp-syncer --dry-run=client -o yaml | kubectl --kubeconfig=${KUBECONFIG_KCP_ADMIN} apply -f -
-  KUBECONFIG=${KUBECONFIG_KCP_ADMIN} ${KUBECTL_KCP_BIN} workload sync "${target}" --kcp-namespace kcp-syncer --syncer-image=${KCP_SYNCER_IMAGE} --output-file ${TEMP_DIR}/"${target}"-syncer.yaml
-
-  kubectl config use-context kind-"${1}"
-
-  kubectl apply -f ${TEMP_DIR}/"${target}"-syncer.yaml
+  kubectl --kubeconfig ${TEMP_DIR}/"${1}".kubeconfig apply -f ${TEMP_DIR}/"${target}"-syncer.yaml
 }
 
 # Delete existing KinD clusters
@@ -132,18 +123,18 @@ echo "Waiting for kcp server to be ready..."
 wait_for "grep 'Bootstrapped ClusterWorkspaceShard root|root' ${KCP_LOG_FILE}" "kcp" "1m" "5"
 sleep 5
 
-KUBECONFIG=${KUBECONFIG_KCP_ADMIN} ${KUBECTL_KCP_BIN} workspace use "root"
-KUBECONFIG=${KUBECONFIG_KCP_ADMIN} ${KUBECTL_KCP_BIN} workspace create "default" --type universal --enter
+${KUBECTL_KCP_BIN} workspace use "root"
+${KUBECTL_KCP_BIN} workspace create "default" --type universal --enter
 
 # Create control plane sync target and wait for it to be ready
-KUBECONFIG=${KUBECONFIG_KCP_ADMIN} ${KUBECTL_KCP_BIN} workspace use "${ORG_WORKSPACE}"
-KUBECONFIG=${KUBECONFIG_KCP_ADMIN} ${KUBECTL_KCP_BIN} workspace create "control-compute" --enter || KUBECONFIG=${KUBECONFIG_KCP_ADMIN} ${KUBECTL_KCP_BIN} workspace use "control-compute"
+${KUBECTL_KCP_BIN} workspace use "${ORG_WORKSPACE}"
+${KUBECTL_KCP_BIN} workspace create "control-compute" --enter || ${KUBECTL_KCP_BIN} workspace use "control-compute"
 createSyncTarget $KCP_CONTROL_CLUSTER_NAME 8081 8444 "control"
-KUBECONFIG=${KUBECONFIG_KCP_ADMIN} kubectl wait --timeout=300s --for=condition=Ready=true synctargets "control"
+kubectl wait --timeout=300s --for=condition=Ready=true synctargets "control"
 
-# Create data plane sync target clusters and wait for them to be ready
-KUBECONFIG=${KUBECONFIG_KCP_ADMIN} ${KUBECTL_KCP_BIN} workspace use "${ORG_WORKSPACE}"
-KUBECONFIG=${KUBECONFIG_KCP_ADMIN} ${KUBECTL_KCP_BIN} workspace create "data-compute" --enter || KUBECONFIG=${KUBECONFIG_KCP_ADMIN} ${KUBECTL_KCP_BIN} workspace use "data-compute"
+# Create data plane sync targets and wait for them to be ready
+${KUBECTL_KCP_BIN} workspace use "${ORG_WORKSPACE}"
+${KUBECTL_KCP_BIN} workspace create "data-compute" --enter || ${KUBECTL_KCP_BIN} workspace use "data-compute"
 echo "Creating $NUM_CLUSTERS kcp SyncTarget cluster(s)"
 port80=8082
 port443=8445
@@ -151,25 +142,26 @@ for cluster in $CLUSTERS; do
   createSyncTarget "$cluster" $port80 $port443
 
   echo "Deploying Ingress controller to ${cluster}"
+  kubeconfig=${TEMP_DIR}/"${cluster}".kubeconfig
   VERSION=controller-v1.2.1
-  curl https://raw.githubusercontent.com/kubernetes/ingress-nginx/"${VERSION}"/deploy/static/provider/kind/deploy.yaml | sed "s/--publish-status-address=localhost/--report-node-internal-ip-address/g" | kubectl apply -f -
-  kubectl annotate ingressclass nginx "ingressclass.kubernetes.io/is-default-class=true"
+  curl https://raw.githubusercontent.com/kubernetes/ingress-nginx/"${VERSION}"/deploy/static/provider/kind/deploy.yaml | sed "s/--publish-status-address=localhost/--report-node-internal-ip-address/g" | kubectl --kubeconfig "${kubeconfig}" apply -f -
+  kubectl --kubeconfig "${kubeconfig}" annotate ingressclass nginx "ingressclass.kubernetes.io/is-default-class=true"
   echo "Waiting for deployments to be ready ..."
-  kubectl -n ingress-nginx wait --timeout=300s --for=condition=Available deployments --all
+  kubectl --kubeconfig "${kubeconfig}" -n ingress-nginx wait --timeout=300s --for=condition=Available deployments --all
 
   port80=$((port80 + 1))
   port443=$((port443 + 1))
 done
-KUBECONFIG=${KUBECONFIG_KCP_ADMIN} kubectl wait --timeout=300s --for=condition=Ready=true synctargets ${CLUSTERS}
+kubectl wait --timeout=300s --for=condition=Ready=true synctargets ${CLUSTERS}
 
 # Switch to control workspace
-KUBECONFIG=${KUBECONFIG_KCP_ADMIN} ${KUBECTL_KCP_BIN} workspace use "${ORG_WORKSPACE}"
-KUBECONFIG=${KUBECONFIG_KCP_ADMIN} ${KUBECTL_KCP_BIN} workspace create "control" --enter || KUBECONFIG=${KUBECONFIG_KCP_ADMIN} ${KUBECTL_KCP_BIN} workspace use "control"
-${KUSTOMIZE_BIN} build config/kcp | KUBECONFIG=${KUBECONFIG_KCP_ADMIN} kubectl apply --server-side -f -
+${KUBECTL_KCP_BIN} workspace use "${ORG_WORKSPACE}"
+${KUBECTL_KCP_BIN} workspace create "control" --enter || ${KUBECTL_KCP_BIN} workspace use "control"
+${KUSTOMIZE_BIN} build config/kcp | kubectl apply --server-side -f -
 
 # Switch to data workspace
-KUBECONFIG=${KUBECONFIG_KCP_ADMIN} ${KUBECTL_KCP_BIN} workspace use "${ORG_WORKSPACE}"
-KUBECONFIG=${KUBECONFIG_KCP_ADMIN} ${KUBECTL_KCP_BIN} workspace create "data" --enter || KUBECONFIG=${KUBECONFIG_KCP_ADMIN} ${KUBECTL_KCP_BIN} workspace use "data"
+${KUBECTL_KCP_BIN} workspace use "${ORG_WORKSPACE}"
+${KUBECTL_KCP_BIN} workspace create "data" --enter || ${KUBECTL_KCP_BIN} workspace use "data"
 
 echo ""
 echo "KCP PID          : ${KCP_PID}"
