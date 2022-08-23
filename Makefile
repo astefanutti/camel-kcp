@@ -81,12 +81,12 @@ docker-build: ## Build docker image
 ##@ Deployment
 
 .PHONY: install
-install: kustomize ## Install CRDs into the K8s cluster specified in ~/.kube/config
-	$(KUSTOMIZE) build config/crd | kubectl apply -f -
+install: kcp kustomize ## Install APIs
+	$(KUSTOMIZE) build config/crds | $(KUBECTL_KCP_BIN) crd snapshot -f - --prefix today | kubectl apply --server-side -f -
 
 .PHONY: uninstall
-uninstall: kustomize ## Uninstall CRDs from the K8s cluster specified in ~/.kube/config
-	$(KUSTOMIZE) build config/crd | kubectl delete -f -
+uninstall: kcp kustomize ## Uninstall APIs
+	$(KUSTOMIZE) build config/crds | $(KUBECTL_KCP_BIN) crd snapshot -f - --prefix today | kubectl delete -f -
 
 .PHONY: deploy
 deploy: kustomize generate-ld-config ## Deploy controller to the K8s cluster specified in ~/.kube/config
@@ -130,6 +130,7 @@ $(LOCALBIN): ## Ensure that the directory exists
 
 ## Tool Binaries
 KCP ?= $(LOCALBIN)/kcp
+KUBECTL_KCP_BIN ?= $(LOCALBIN)/kubectl-kcp
 CONTROLLER_GEN ?= $(LOCALBIN)/controller-gen
 KUSTOMIZE ?= $(LOCALBIN)/kustomize
 KIND ?= $(LOCALBIN)/kind

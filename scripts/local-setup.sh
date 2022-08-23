@@ -109,17 +109,6 @@ createSyncTarget() {
   kubectl apply -f ${TEMP_DIR}/"${target}"-syncer.yaml
 }
 
-createDataSyncTarget() {
-  createSyncTarget $1 $2 $3 $4
-
-  echo "Deploying Ingress controller to ${1}"
-  VERSION=controller-v1.2.1
-  curl https://raw.githubusercontent.com/kubernetes/ingress-nginx/"${VERSION}"/deploy/static/provider/kind/deploy.yaml | sed "s/--publish-status-address=localhost/--report-node-internal-ip-address/g" | kubectl apply -f -
-  kubectl annotate ingressclass nginx "ingressclass.kubernetes.io/is-default-class=true"
-  echo "Waiting for deployments to be ready ..."
-  kubectl -n ingress-nginx wait --timeout=300s --for=condition=Available deployments --all
-}
-
 # Delete existing KinD clusters
 clusterCount=$(${KIND_BIN} get clusters | grep ${KIND_CLUSTER_PREFIX} | wc -l)
 if ! [[ $clusterCount =~ "0" ]] ; then
@@ -159,11 +148,24 @@ echo "Creating $NUM_CLUSTERS kcp SyncTarget cluster(s)"
 port80=8082
 port443=8445
 for cluster in $CLUSTERS; do
-  createDataSyncTarget "$cluster" $port80 $port443
+  createSyncTarget "$cluster" $port80 $port443
+
+  echo "Deploying Ingress controller to ${cluster}"
+  VERSION=controller-v1.2.1
+  curl https://raw.githubusercontent.com/kubernetes/ingress-nginx/"${VERSION}"/deploy/static/provider/kind/deploy.yaml | sed "s/--publish-status-address=localhost/--report-node-internal-ip-address/g" | kubectl apply -f -
+  kubectl annotate ingressclass nginx "ingressclass.kubernetes.io/is-default-class=true"
+  echo "Waiting for deployments to be ready ..."
+  kubectl -n ingress-nginx wait --timeout=300s --for=condition=Available deployments --all
+
   port80=$((port80 + 1))
   port443=$((port443 + 1))
 done
 KUBECONFIG=${KUBECONFIG_KCP_ADMIN} kubectl wait --timeout=300s --for=condition=Ready=true synctargets ${CLUSTERS}
+
+# Switch to control workspace
+KUBECONFIG=${KUBECONFIG_KCP_ADMIN} ${KUBECTL_KCP_BIN} workspace use "${ORG_WORKSPACE}"
+KUBECONFIG=${KUBECONFIG_KCP_ADMIN} ${KUBECTL_KCP_BIN} workspace create "control" --enter || KUBECONFIG=${KUBECONFIG_KCP_ADMIN} ${KUBECTL_KCP_BIN} workspace use "control"
+${KUSTOMIZE_BIN} build config/crds | ${KUBECTL_KCP_BIN} crd snapshot -f - --prefix today | KUBECONFIG=${KUBECONFIG_KCP_ADMIN} kubectl apply --server-side -f -
 
 # Switch to data workspace
 KUBECONFIG=${KUBECONFIG_KCP_ADMIN} ${KUBECTL_KCP_BIN} workspace use "${ORG_WORKSPACE}"
