@@ -15,9 +15,27 @@
 # limitations under the License.
 # ---------------------------------------------------------------------------
 
-resources:
-  - today.apiresourceschemas.yaml
-  - apiexport.yaml
-
-configurations:
-  - kustomizeconfig.yaml
+apiVersion: apis.kcp.dev/v1alpha1
+kind: APIExport
+metadata:
+  name: camel-kcp
+spec:
+  latestResourceSchemas:
+    - today.builds.camel.apache.org
+    - today.camelcatalogs.camel.apache.org
+    - today.integrationkits.camel.apache.org
+    - today.integrationplatforms.camel.apache.org
+    - today.integrations.camel.apache.org
+    - today.kameletbindings.camel.apache.org
+    - today.kamelets.camel.apache.org
+  permissionClaims:
+    - group: ""
+      resource: "secrets"
+    - group: ""
+      resource: "configmaps"
+    - group: ""
+      resource: "services"
+    - group: "apps"
+      resource: "deployments"
+    - group: "networking.k8s.io"
+      resource: "ingresses"
