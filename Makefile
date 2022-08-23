@@ -23,6 +23,8 @@ IMG ?= $(IMAGE_TAG_BASE):$(IMAGE_TAG)
 KUBECONFIG ?= $(shell pwd)/.kcp/admin.kubeconfig
 CLUSTERS_KUBECONFIG_DIR ?= $(shell pwd)/tmp
 
+APIEXPORT_PREFIX ?= today
+
 # Setting SHELL to bash allows bash commands to be executed by recipes.
 # Options are set to exit when a recipe line exits non-zero or a piped command fails.
 SHELL = /usr/bin/env bash
@@ -52,6 +54,10 @@ clean: ## Clean up temporary files
 manifests: controller-gen ## Generate ClusterRole objects
 	$(CONTROLLER_GEN) rbac:roleName=camel-kcp paths="./..." output:rbac:artifacts:config=config/rbac
 
+.PHONY: apiresourceschemas
+apiresourceschemas: kustomize kcp ## Convert CRDs from config/crds to APIResourceSchemas
+	$(KUSTOMIZE) build config/crd | $(KUBECTL_KCP_BIN) crd snapshot -f - --prefix $(APIEXPORT_PREFIX) > config/kcp/$(APIEXPORT_PREFIX).apiresourceschemas.yaml
+
 .PHONY: fmt
 fmt: ## Run go fmt against code
 	go fmt ./...
@@ -80,13 +86,17 @@ docker-build: ## Build docker image
 
 ##@ Deployment
 
+ifndef ignore-not-found
+  ignore-not-found = false
+endif
+
 .PHONY: install
-install: kcp kustomize ## Install APIs
-	$(KUSTOMIZE) build config/crds | $(KUBECTL_KCP_BIN) crd snapshot -f - --prefix today | kubectl apply --server-side -f -
+install: apiresourceschemas kustomize ## Install APIResourceSchemas and APIExport into kcp (using $KUBECONFIG or ~/.kube/config)
+	$(KUSTOMIZE) build config/kcp | kubectl apply --server-side -f -
 
 .PHONY: uninstall
-uninstall: kcp kustomize ## Uninstall APIs
-	$(KUSTOMIZE) build config/crds | $(KUBECTL_KCP_BIN) crd snapshot -f - --prefix today | kubectl delete -f -
+uninstall: kcp kustomize ## Uninstall APIResourceSchemas and APIExport from kcp (using $KUBECONFIG or ~/.kube/config)
+	$(KUSTOMIZE) build config/kcp | kubectl delete --ignore-not-found=$(ignore-not-found) -f -
 
 .PHONY: deploy
 deploy: kustomize generate-ld-config ## Deploy controller to the K8s cluster specified in ~/.kube/config

@@ -1,2 +1,0 @@
-resources:
-  - github.com/apache/camel-k/config/crd?ref=main

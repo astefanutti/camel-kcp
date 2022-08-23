@@ -165,7 +165,7 @@ KUBECONFIG=${KUBECONFIG_KCP_ADMIN} kubectl wait --timeout=300s --for=condition=R
 # Switch to control workspace
 KUBECONFIG=${KUBECONFIG_KCP_ADMIN} ${KUBECTL_KCP_BIN} workspace use "${ORG_WORKSPACE}"
 KUBECONFIG=${KUBECONFIG_KCP_ADMIN} ${KUBECTL_KCP_BIN} workspace create "control" --enter || KUBECONFIG=${KUBECONFIG_KCP_ADMIN} ${KUBECTL_KCP_BIN} workspace use "control"
-${KUSTOMIZE_BIN} build config/crds | ${KUBECTL_KCP_BIN} crd snapshot -f - --prefix today | KUBECONFIG=${KUBECONFIG_KCP_ADMIN} kubectl apply --server-side -f -
+${KUSTOMIZE_BIN} build config/kcp | KUBECONFIG=${KUBECONFIG_KCP_ADMIN} kubectl apply --server-side -f -
 
 # Switch to data workspace
 KUBECONFIG=${KUBECONFIG_KCP_ADMIN} ${KUBECTL_KCP_BIN} workspace use "${ORG_WORKSPACE}"
