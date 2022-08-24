@@ -80,9 +80,6 @@ func Run(ctx context.Context, cfg *rest.Config, newManager func(*rest.Config, ma
 
 	printVersion()
 
-	watchNamespace, err := getWatchNamespace()
-	exitOnError(err, "failed to get watch namespace")
-
 	// Increase maximum burst that is used by client-side throttling,
 	// to prevent the requests made to apply the bundled Kamelets
 	// from being throttled.
@@ -98,7 +95,7 @@ func Run(ctx context.Context, cfg *rest.Config, newManager func(*rest.Config, ma
 	broadcaster := record.NewBroadcaster()
 	defer broadcaster.Shutdown()
 
-	if ok, err := kubernetes.CheckPermission(ctx, c, corev1.GroupName, "events", watchNamespace, "", "create"); err != nil || !ok {
+	if ok, err := kubernetes.CheckPermission(ctx, c, corev1.GroupName, "events", "", "", "create"); err != nil || !ok {
 		// Do not sink Events to the server as they'll be rejected
 		broadcaster = event.NewSinkLessBroadcaster(broadcaster)
 		exitOnError(err, "cannot check permissions for creating Events")
@@ -107,14 +104,8 @@ func Run(ctx context.Context, cfg *rest.Config, newManager func(*rest.Config, ma
 
 	operatorNamespace := platform.GetOperatorNamespace()
 	if operatorNamespace == "" {
-		// Fallback to using the watch namespace when the operator is not in-cluster.
-		// It does not support local (off-cluster) operator watching resources globally,
-		// in which case it's not possible to determine a namespace.
-		operatorNamespace = watchNamespace
-		if operatorNamespace == "" {
-			leaderElection = false
-			logger.Info("unable to determine namespace for leader election")
-		}
+		leaderElection = false
+		logger.Info("unable to determine namespace for leader election")
 	}
 
 	// Set the operator container image if it runs in-container
@@ -152,7 +143,6 @@ func Run(ctx context.Context, cfg *rest.Config, newManager func(*rest.Config, ma
 	}
 
 	mgr, err := newManager(c.GetConfig(), manager.Options{
-		Namespace:                     watchNamespace,
 		EventBroadcaster:              broadcaster,
 		LeaderElection:                leaderElection,
 		LeaderElectionNamespace:       operatorNamespace,
@@ -186,7 +176,7 @@ func Run(ctx context.Context, cfg *rest.Config, newManager func(*rest.Config, ma
 	logger.Info("Installing operator resources")
 	installCtx, installCancel := context.WithTimeout(ctx, 1*time.Minute)
 	defer installCancel()
-	install.OperatorStartupOptionalTools(installCtx, c, watchNamespace, operatorNamespace, logger)
+	install.OperatorStartupOptionalTools(installCtx, c, "", operatorNamespace, logger)
 	exitOnError(findOrCreateIntegrationPlatform(installCtx, c, operatorNamespace), "failed to create integration platform")
 
 	logger.Info("Starting the manager")
@@ -222,15 +212,6 @@ func findOrCreateIntegrationPlatform(ctx context.Context, c client.Client, opera
 	}
 
 	return nil
-}
-
-// getWatchNamespace returns the Namespace the operator should be watching for changes.
-func getWatchNamespace() (string, error) {
-	ns, found := os.LookupEnv(platform.OperatorWatchNamespaceEnvVariable)
-	if !found {
-		return "", fmt.Errorf("%s must be set", platform.OperatorWatchNamespaceEnvVariable)
-	}
-	return ns, nil
 }
 
 // getOperatorImage returns the image currently used by the running operator if present (when running out of cluster, it may be absent).
