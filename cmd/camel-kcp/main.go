@@ -40,6 +40,7 @@ import (
 	"k8s.io/apimachinery/pkg/selection"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/discovery"
+	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
 	// Import all Kubernetes client auth plugins (e.g. Azure, GCP, OIDC, etc.)
 	// to ensure that exec-entrypoint and run can make use of them.
 	_ "k8s.io/client-go/plugin/pkg/client/auth"
@@ -66,6 +67,8 @@ import (
 	"github.com/apache/camel-k/pkg/platform"
 	logutil "github.com/apache/camel-k/pkg/util/log"
 )
+
+var scheme = runtime.NewScheme()
 
 var logger = logutil.Log.WithName("kcp")
 
@@ -120,6 +123,10 @@ func main() {
 	ctx := ctrl.SetupSignalHandler()
 	cfg := ctrl.GetConfigOrDie()
 
+	// Register types to scheme
+	exitOnError(clientgoscheme.AddToScheme(scheme), "failed registering types to scheme")
+	exitOnError(apis.AddToScheme(scheme), "failed registering types to scheme")
+
 	// Common manager options
 	mgrOptions := ctrl.Options{
 		LeaderElection:                options.enableLeaderElection,
@@ -129,6 +136,7 @@ func main() {
 		LeaderElectionReleaseOnCancel: true,
 		HealthProbeBindAddress:        ":" + strconv.Itoa(options.healthProbePort),
 		MetricsBindAddress:            ":" + strconv.Itoa(options.metricsPort),
+		Scheme:                        scheme,
 	}
 
 	// Clients
@@ -230,9 +238,9 @@ func main() {
 	// 	"unable to set up field indexer for status.phase: %v",
 	// )
 
-	logger.Info("Configuring manager")
+	// Probes and controllers
+	logger.Info("Configuring the manager")
 	exitOnError(mgr.AddHealthzCheck("health-probe", healthz.Ping), "Unable add liveness check")
-	exitOnError(apis.AddToScheme(mgr.GetScheme()), "")
 	exitOnError(controller.AddToManager(mgr), "")
 
 	// FIXME: workspace initializer
