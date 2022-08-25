@@ -20,41 +20,20 @@ package main
 import (
 	"context"
 	"fmt"
-	"math/rand"
 	"os"
-	"reflect"
 	"runtime"
-	"strconv"
-	"time"
 
 	"github.com/pkg/errors"
-	"go.uber.org/automaxprocs/maxprocs"
 
-	appsv1 "k8s.io/api/apps/v1"
-	batchv1 "k8s.io/api/batch/v1"
-	coordination "k8s.io/api/coordination/v1"
 	corev1 "k8s.io/api/core/v1"
-	k8serrors "k8s.io/apimachinery/pkg/api/errors"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/fields"
-	"k8s.io/apimachinery/pkg/labels"
-	"k8s.io/apimachinery/pkg/selection"
-	"k8s.io/client-go/rest"
-	"k8s.io/client-go/tools/leaderelection/resourcelock"
-	"k8s.io/client-go/tools/record"
+	"k8s.io/client-go/discovery"
 
-	"sigs.k8s.io/controller-runtime/pkg/cache"
 	ctrl "sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/healthz"
-	"sigs.k8s.io/controller-runtime/pkg/manager"
 
-	servingv1 "knative.dev/serving/pkg/apis/serving/v1"
-
-	"github.com/apache/camel-k/pkg/apis"
 	v1 "github.com/apache/camel-k/pkg/apis/camel/v1"
 	"github.com/apache/camel-k/pkg/client"
-	"github.com/apache/camel-k/pkg/controller"
-	"github.com/apache/camel-k/pkg/event"
 	"github.com/apache/camel-k/pkg/install"
 	"github.com/apache/camel-k/pkg/platform"
 	"github.com/apache/camel-k/pkg/util/defaults"
@@ -71,119 +50,8 @@ func printVersion() {
 	logger.Info(fmt.Sprintf("Camel K Git Commit: %v", defaults.GitCommit))
 }
 
-// Run starts the Camel K operator.
-func Run(ctx context.Context, cfg *rest.Config, newManager func(*rest.Config, manager.Options) (manager.Manager, error), healthPort, monitoringPort int32, leaderElection bool, leaderElectionID string) {
-	rand.Seed(time.Now().UTC().UnixNano())
-
-	_, err := maxprocs.Set(maxprocs.Logger(func(f string, a ...interface{}) { logger.Info(fmt.Sprintf(f, a)) }))
-	exitOnError(err, "failed to set GOMAXPROCS from cgroups")
-
-	printVersion()
-
-	// Increase maximum burst that is used by client-side throttling,
-	// to prevent the requests made to apply the bundled Kamelets
-	// from being throttled.
-	cfg.QPS = 20
-	cfg.Burst = 200
-	c, err := client.NewClientWithConfig(false, cfg)
-	exitOnError(err, "cannot initialize client")
-
-	// We do not rely on the event broadcaster managed by controller runtime,
-	// so that we can check the operator has been granted permission to create
-	// Events. This is required for the operator to be installable by standard
-	// admin users, that are not granted create permission on Events by default.
-	broadcaster := record.NewBroadcaster()
-	defer broadcaster.Shutdown()
-
-	if ok, err := kubernetes.CheckPermission(ctx, c, corev1.GroupName, "events", "", "", "create"); err != nil || !ok {
-		// Do not sink Events to the server as they'll be rejected
-		broadcaster = event.NewSinkLessBroadcaster(broadcaster)
-		exitOnError(err, "cannot check permissions for creating Events")
-		logger.Info("Event broadcasting is disabled because of missing permissions to create Events")
-	}
-
-	operatorNamespace := platform.GetOperatorNamespace()
-	if operatorNamespace == "" {
-		leaderElection = false
-		logger.Info("unable to determine namespace for leader election")
-	}
-
-	// Set the operator container image if it runs in-container
-	platform.OperatorImage, err = getOperatorImage(ctx, c)
-	exitOnError(err, "cannot get operator container image")
-
-	if ok, err := kubernetes.CheckPermission(ctx, c, coordination.GroupName, "leases", operatorNamespace, "", "create"); err != nil || !ok {
-		leaderElection = false
-		exitOnError(err, "cannot check permissions for creating Leases")
-		logger.Info("The operator is not granted permissions to create Leases")
-	}
-
-	if !leaderElection {
-		logger.Info("Leader election is disabled!")
-	}
-
-	hasIntegrationLabel, err := labels.NewRequirement(v1.IntegrationLabel, selection.Exists, []string{})
-	exitOnError(err, "cannot create Integration label selector")
-	selector := labels.NewSelector().Add(*hasIntegrationLabel)
-
-	selectors := cache.SelectorsByObject{
-		&corev1.Pod{}:        {Label: selector},
-		&appsv1.Deployment{}: {Label: selector},
-		&batchv1.Job{}:       {Label: selector},
-		&servingv1.Service{}: {Label: selector},
-	}
-
-	if ok, err := kubernetes.IsAPIResourceInstalled(c, batchv1.SchemeGroupVersion.String(), reflect.TypeOf(batchv1.CronJob{}).Name()); ok && err == nil {
-		selectors[&batchv1.CronJob{}] = struct {
-			Label labels.Selector
-			Field fields.Selector
-		}{
-			Label: selector,
-		}
-	}
-
-	mgr, err := newManager(c.GetConfig(), manager.Options{
-		EventBroadcaster:              broadcaster,
-		LeaderElection:                leaderElection,
-		LeaderElectionNamespace:       operatorNamespace,
-		LeaderElectionID:              leaderElectionID,
-		LeaderElectionResourceLock:    resourcelock.LeasesResourceLock,
-		LeaderElectionReleaseOnCancel: true,
-		HealthProbeBindAddress:        ":" + strconv.Itoa(int(healthPort)),
-		MetricsBindAddress:            ":" + strconv.Itoa(int(monitoringPort)),
-		NewCache: cache.BuilderWithOptions(
-			cache.Options{
-				SelectorsByObject: selectors,
-			},
-		),
-	})
-	exitOnError(err, "")
-
-	exitOnError(
-		mgr.GetFieldIndexer().IndexField(ctx, &corev1.Pod{}, "status.phase",
-			func(obj ctrl.Object) []string {
-				pod, _ := obj.(*corev1.Pod)
-				return []string{string(pod.Status.Phase)}
-			}),
-		"unable to set up field indexer for status.phase: %v",
-	)
-
-	logger.Info("Configuring manager")
-	exitOnError(mgr.AddHealthzCheck("health-probe", healthz.Ping), "Unable add liveness check")
-	exitOnError(apis.AddToScheme(mgr.GetScheme()), "")
-	exitOnError(controller.AddToManager(mgr), "")
-
-	logger.Info("Installing operator resources")
-	installCtx, installCancel := context.WithTimeout(ctx, 1*time.Minute)
-	defer installCancel()
-	install.OperatorStartupOptionalTools(installCtx, c, "", operatorNamespace, logger)
-	exitOnError(findOrCreateIntegrationPlatform(installCtx, c, operatorNamespace), "failed to create integration platform")
-
-	logger.Info("Starting the manager")
-	exitOnError(mgr.Start(ctx), "manager exited non-zero")
-}
-
 // findOrCreateIntegrationPlatform create default integration platform in operator namespace if not already exists.
+// nolint: unused
 func findOrCreateIntegrationPlatform(ctx context.Context, c client.Client, operatorNamespace string) error {
 	var platformName string
 	if defaults.OperatorID() != "" {
@@ -192,7 +60,7 @@ func findOrCreateIntegrationPlatform(ctx context.Context, c client.Client, opera
 		platformName = platform.DefaultPlatformName
 	}
 
-	if pl, err := kubernetes.GetIntegrationPlatform(ctx, c, platformName, operatorNamespace); pl == nil || k8serrors.IsNotFound(err) {
+	if pl, err := kubernetes.GetIntegrationPlatform(ctx, c, platformName, operatorNamespace); pl == nil || apierrors.IsNotFound(err) {
 		defaultPlatform := v1.NewIntegrationPlatform(operatorNamespace, platformName)
 		if defaultPlatform.Labels == nil {
 			defaultPlatform.Labels = make(map[string]string)
@@ -204,7 +72,7 @@ func findOrCreateIntegrationPlatform(ctx context.Context, c client.Client, opera
 		}
 
 		// Make sure that IntegrationPlatform installed in operator namespace can be seen by others
-		if err := install.IntegrationPlatformViewerRole(ctx, c, operatorNamespace); err != nil && !k8serrors.IsAlreadyExists(err) {
+		if err := install.IntegrationPlatformViewerRole(ctx, c, operatorNamespace); err != nil && !apierrors.IsAlreadyExists(err) {
 			return errors.Wrap(err, "Error while installing global IntegrationPlatform viewer role")
 		}
 	} else {
@@ -215,6 +83,7 @@ func findOrCreateIntegrationPlatform(ctx context.Context, c client.Client, opera
 }
 
 // getOperatorImage returns the image currently used by the running operator if present (when running out of cluster, it may be absent).
+// nolint: unused
 func getOperatorImage(ctx context.Context, c ctrl.Reader) (string, error) {
 	ns := platform.GetOperatorNamespace()
 	name := platform.GetOperatorPodName()
@@ -223,7 +92,7 @@ func getOperatorImage(ctx context.Context, c ctrl.Reader) (string, error) {
 	}
 
 	pod := corev1.Pod{}
-	if err := c.Get(ctx, ctrl.ObjectKey{Namespace: ns, Name: name}, &pod); err != nil && k8serrors.IsNotFound(err) {
+	if err := c.Get(ctx, ctrl.ObjectKey{Namespace: ns, Name: name}, &pod); err != nil && apierrors.IsNotFound(err) {
 		return "", nil
 	} else if err != nil {
 		return "", err
@@ -239,4 +108,23 @@ func exitOnError(err error, msg string) {
 		logger.Error(err, msg)
 		os.Exit(1)
 	}
+}
+
+// nolint: unused
+func isAPIResourceInstalled(c discovery.DiscoveryInterface, groupVersion string, kind string) (bool, error) {
+	resources, err := c.ServerResourcesForGroupVersion(groupVersion)
+	if err != nil {
+		if apierrors.IsNotFound(err) {
+			return false, nil
+		}
+		return false, err
+	}
+
+	for _, resource := range resources.APIResources {
+		if resource.Kind == kind {
+			return true, nil
+		}
+	}
+
+	return false, nil
 }
