@@ -110,7 +110,6 @@ func exitOnError(err error, msg string) {
 	}
 }
 
-// nolint: unused
 func isAPIResourceInstalled(c discovery.DiscoveryInterface, groupVersion string, kind string) (bool, error) {
 	resources, err := c.ServerResourcesForGroupVersion(groupVersion)
 	if err != nil {
