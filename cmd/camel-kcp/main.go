@@ -178,10 +178,9 @@ func main() {
 		}
 	}
 	if kcpEnabled {
-		mgrOptions.NewCache = func(config *rest.Config, opts cache.Options) (cache.Cache, error) {
-			return kcp.NewClusterAwareCache(config, cache.Options{
-				SelectorsByObject: selectors,
-			})
+		mgrOptions.NewCache = func(config *rest.Config, options cache.Options) (cache.Cache, error) {
+			options.SelectorsByObject = selectors
+			return kcp.NewClusterAwareCache(config, options)
 		}
 	} else {
 		mgrOptions.NewCache = cache.BuilderWithOptions(
