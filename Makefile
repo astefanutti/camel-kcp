@@ -166,7 +166,7 @@ kcp: $(KCP) ## Download kcp locally if necessary
 $(KCP):
 	rm -rf ./tmp/kcp
 	git clone --depth=1 --branch ${KCP_BRANCH} https://github.com/kcp-dev/kcp ./tmp/kcp
-	cd ./tmp/kcp && make
+	cd ./tmp/kcp && IGNORE_GO_VERSION=1 GOWORK=off make
 	cp ./tmp/kcp/bin/* $(LOCALBIN)
 	rm -rf ./tmp/kcp
 
