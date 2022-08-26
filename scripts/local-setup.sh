@@ -51,7 +51,7 @@ KCP_LOG_FILE="${TEMP_DIR}"/kcp.log
 
 KIND_CLUSTER_PREFIX="kcp-cluster-"
 KCP_CONTROL_CLUSTER_NAME="${KIND_CLUSTER_PREFIX}control"
-ORG_WORKSPACE=root:default
+ORG_WORKSPACE=root:camel-k
 
 : ${KCP_VERSION:="release-0.7"}
 KCP_SYNCER_IMAGE="ghcr.io/kcp-dev/kcp/syncer:${KCP_VERSION}"
@@ -124,17 +124,16 @@ wait_for "grep 'Bootstrapped ClusterWorkspaceShard root|root' ${KCP_LOG_FILE}" "
 sleep 5
 
 ${KUBECTL_KCP_BIN} workspace use "root"
-${KUBECTL_KCP_BIN} workspace create "default" --type universal --enter
+${KUBECTL_KCP_BIN} workspace create "camel-k" --type universal --enter
 
 # Create control plane sync target and wait for it to be ready
 ${KUBECTL_KCP_BIN} workspace use "${ORG_WORKSPACE}"
-${KUBECTL_KCP_BIN} workspace create "control-compute" --enter || ${KUBECTL_KCP_BIN} workspace use "control-compute"
+${KUBECTL_KCP_BIN} workspace create "camel-kcp" --enter || ${KUBECTL_KCP_BIN} workspace use "camel-kcp"
+echo "Creating kcp SyncTarget control cluster"
 createSyncTarget $KCP_CONTROL_CLUSTER_NAME 8081 8444 "control"
 kubectl wait --timeout=300s --for=condition=Ready=true synctargets "control"
 
 # Create data plane sync targets and wait for them to be ready
-${KUBECTL_KCP_BIN} workspace use "${ORG_WORKSPACE}"
-${KUBECTL_KCP_BIN} workspace create "data-compute" --enter || ${KUBECTL_KCP_BIN} workspace use "data-compute"
 echo "Creating $NUM_CLUSTERS kcp SyncTarget cluster(s)"
 port80=8082
 port443=8445
@@ -154,14 +153,12 @@ for cluster in $CLUSTERS; do
 done
 kubectl wait --timeout=300s --for=condition=Ready=true synctargets ${CLUSTERS}
 
-# Switch to control workspace
-${KUBECTL_KCP_BIN} workspace use "${ORG_WORKSPACE}"
-${KUBECTL_KCP_BIN} workspace create "control" --enter || ${KUBECTL_KCP_BIN} workspace use "control"
+# Install APIExport
 ${KUSTOMIZE_BIN} build config/kcp | kubectl apply --server-side -f -
 
 # Switch to data workspace
 ${KUBECTL_KCP_BIN} workspace use "${ORG_WORKSPACE}"
-${KUBECTL_KCP_BIN} workspace create "data" --enter || ${KUBECTL_KCP_BIN} workspace use "data"
+${KUBECTL_KCP_BIN} workspace create "demo" --enter || ${KUBECTL_KCP_BIN} workspace use "demo"
 
 echo ""
 echo "KCP PID          : ${KCP_PID}"
