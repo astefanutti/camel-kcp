@@ -1,0 +1,3 @@
+[submodule "camel-k"]
+	path = camel-k
+	url = https://github.com/astefanutti/camel-k
