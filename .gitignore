@@ -17,7 +17,7 @@ vendor/
 #Ignore .kcp directory
 .kcp/
 
-#Ignore temporal directoryo
+# Ignore tmp directory
 tmp/
 
 # Ignore bin directory contents
