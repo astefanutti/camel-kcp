@@ -153,7 +153,11 @@ for cluster in $CLUSTERS; do
 done
 kubectl wait --timeout=300s --for=condition=Ready=true synctargets ${CLUSTERS}
 
+# Install APIs
+identityHash=$(kubectl get apiexport kubernetes -o json | jq -r .status.identityHash)
+
 # Install APIExport
+sed -e "s/IDENTITY_HASH/$identityHash/" config/kcp/identity-hash-patch.yaml > config/kcp/add-identity-hash.yaml
 ${KUSTOMIZE_BIN} build config/kcp | kubectl apply --server-side -f -
 
 # Switch to data workspace

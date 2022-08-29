@@ -15,15 +15,6 @@
 # limitations under the License.
 # ---------------------------------------------------------------------------
 
-resources:
-  - today.apiresourceschemas.yaml
-  - apiexport.yaml
-
-configurations:
-  - kustomizeconfig.yaml
-
-patchesJson6902:
-  - target:
-      kind: APIExport
-      name: camel-kcp
-    path: add-identity-hash.yaml
+- op: add
+  path: /spec/permissionClaims/2/identityHash
+  value: IDENTITY_HASH
