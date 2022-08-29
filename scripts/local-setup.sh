@@ -164,6 +164,10 @@ ${KUSTOMIZE_BIN} build config/kcp | kubectl apply --server-side -f -
 ${KUBECTL_KCP_BIN} workspace use "${ORG_WORKSPACE}"
 ${KUBECTL_KCP_BIN} workspace create "demo" --enter || ${KUBECTL_KCP_BIN} workspace use "demo"
 
+# Install APIBinding(s)
+sed -e "s/IDENTITY_HASH/$identityHash/" config/demo/identity-hash-patch.yaml > config/demo/add-identity-hash.yaml
+${KUSTOMIZE_BIN} build config/demo | kubectl apply --server-side -f -
+
 echo ""
 echo "KCP PID          : ${KCP_PID}"
 echo ""
