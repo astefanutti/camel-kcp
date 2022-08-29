@@ -65,6 +65,7 @@ import (
 	v1 "github.com/apache/camel-k/pkg/apis/camel/v1"
 	"github.com/apache/camel-k/pkg/controller"
 	"github.com/apache/camel-k/pkg/platform"
+	"github.com/apache/camel-k/pkg/util/kubernetes"
 	logutil "github.com/apache/camel-k/pkg/util/log"
 )
 
@@ -140,7 +141,8 @@ func main() {
 	}
 
 	// Clients
-	discoveryClient, err := discovery.NewDiscoveryClientForConfig(cfg)
+	var discoveryClient discovery.DiscoveryInterface
+	discoveryClient, err = discovery.NewDiscoveryClientForConfig(cfg)
 	exitOnError(err, "failed to create discovery client")
 
 	kcpEnabled := kcpAPIsGroupPresent(discoveryClient)
@@ -153,8 +155,10 @@ func main() {
 
 		logger.Info("Using virtual workspace URL", "url", apiExportCfg.Host)
 
-		discoveryClient, err = discovery.NewDiscoveryClientForConfig(apiExportCfg)
+		discoveryClient, err = newClusterAwareDiscovery(apiExportCfg)
 		exitOnError(err, "failed to create discovery client for APIExport virtual workspace")
+
+		kubernetes.DiscoveryClient = discoveryClient
 	} else {
 		logger.Info("The apis.kcp.dev group is not present - creating standard manager")
 	}
@@ -317,4 +321,11 @@ func kcpAPIsGroupPresent(discoveryClient discovery.DiscoveryInterface) bool {
 		}
 	}
 	return false
+}
+
+// newClusterAwareDiscovery returns a discovery.DiscoveryInterface that works with APIExport virtual workspace API server.
+func newClusterAwareDiscovery(config *rest.Config) (discovery.DiscoveryInterface, error) {
+	c := rest.CopyConfig(config)
+	c.Host += "/clusters/*"
+	return discovery.NewDiscoveryClientForConfig(c)
 }
