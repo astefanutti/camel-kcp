@@ -124,7 +124,7 @@ wait_for "grep 'Bootstrapped ClusterWorkspaceShard root|root' ${KCP_LOG_FILE}" "
 sleep 5
 
 ${KUBECTL_KCP_BIN} workspace use "root"
-${KUBECTL_KCP_BIN} workspace create "camel-k" --type universal --enter
+${KUBECTL_KCP_BIN} workspace create "camel-k" --type universal --enter || ${KUBECTL_KCP_BIN} workspace use "camel-k"
 
 # Create control plane sync target and wait for it to be ready
 ${KUBECTL_KCP_BIN} workspace use "${ORG_WORKSPACE}"
