@@ -41,12 +41,12 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/discovery"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
+	"k8s.io/client-go/tools/record"
 	// Import all Kubernetes client auth plugins (e.g. Azure, GCP, OIDC, etc.)
 	// to ensure that exec-entrypoint and run can make use of them.
 	_ "k8s.io/client-go/plugin/pkg/client/auth"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/leaderelection/resourcelock"
-	"k8s.io/client-go/tools/record"
 	"k8s.io/klog/v2"
 
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -64,6 +64,7 @@ import (
 	"github.com/apache/camel-k/pkg/apis"
 	v1 "github.com/apache/camel-k/pkg/apis/camel/v1"
 	"github.com/apache/camel-k/pkg/controller"
+	"github.com/apache/camel-k/pkg/event"
 	"github.com/apache/camel-k/pkg/platform"
 	"github.com/apache/camel-k/pkg/util/kubernetes"
 	logutil "github.com/apache/camel-k/pkg/util/log"
@@ -128,6 +129,11 @@ func main() {
 	exitOnError(clientgoscheme.AddToScheme(scheme), "failed registering types to scheme")
 	exitOnError(apis.AddToScheme(scheme), "failed registering types to scheme")
 
+	// FIXME: cluster-aware event sink
+	broadcaster := record.NewBroadcaster()
+	defer broadcaster.Shutdown()
+	broadcaster = event.NewSinkLessBroadcaster(broadcaster)
+
 	// Common manager options
 	mgrOptions := ctrl.Options{
 		LeaderElection:                options.enableLeaderElection,
@@ -138,6 +144,7 @@ func main() {
 		HealthProbeBindAddress:        ":" + strconv.Itoa(options.healthProbePort),
 		MetricsBindAddress:            ":" + strconv.Itoa(options.metricsPort),
 		Scheme:                        scheme,
+		EventBroadcaster:              broadcaster,
 	}
 
 	// Clients
@@ -193,20 +200,6 @@ func main() {
 			},
 		)
 	}
-
-	// We do not rely on the event broadcaster managed by controller runtime,
-	// so that we can check the operator has been granted permission to create
-	// Events. This is required for the operator to be installable by standard
-	// admin users, that are not granted create permission on Events by default.
-	broadcaster := record.NewBroadcaster()
-	defer broadcaster.Shutdown()
-
-	// if ok, err := kubernetes.CheckPermission(ctx, c, corev1.GroupName, "events", "", "", "create"); err != nil || !ok {
-	// 	// Do not sink Events to the server as they'll be rejected
-	// 	broadcaster = event.NewSinkLessBroadcaster(broadcaster)
-	// 	exitOnError(err, "cannot check permissions for creating Events")
-	// 	logger.Info("Event broadcasting is disabled because of missing permissions to create Events")
-	// }
 
 	operatorNamespace := platform.GetOperatorNamespace()
 	if operatorNamespace == "" {
