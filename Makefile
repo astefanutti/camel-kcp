@@ -13,7 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-KCP_BRANCH := release-0.7
+KCP_BRANCH := main
 NUM_CLUSTERS := 2
 
 IMAGE_TAG_BASE ?= quay.io/astefanutti/camel-kcp
