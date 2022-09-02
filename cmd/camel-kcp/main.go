@@ -63,6 +63,7 @@ import (
 
 	"github.com/apache/camel-k/pkg/apis"
 	v1 "github.com/apache/camel-k/pkg/apis/camel/v1"
+	camelclient "github.com/apache/camel-k/pkg/client"
 	"github.com/apache/camel-k/pkg/controller"
 	"github.com/apache/camel-k/pkg/event"
 	"github.com/apache/camel-k/pkg/platform"
@@ -237,7 +238,11 @@ func main() {
 	// Probes and controllers
 	logger.Info("Configuring the manager")
 	exitOnError(mgr.AddHealthzCheck("health-probe", healthz.Ping), "Unable add liveness check")
-	exitOnError(controller.AddToManager(mgr), "")
+
+	httpClient, err := kcp.ClusterAwareHTTPClient(apiExportCfg)
+	exitOnError(err, "failed to create cluster aware HTTP client")
+
+	exitOnError(controller.AddToManager(mgr, camelclient.Options{HTTPClient: httpClient}), "")
 
 	// FIXME: workspace initializer
 	// logger.Info("Installing operator resources")
