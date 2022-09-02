@@ -16,5 +16,14 @@
 # ---------------------------------------------------------------------------
 
 - op: add
+  path: /spec/permissionClaims/0/identityHash
+  value: IDENTITY_HASH
+- op: add
+  path: /spec/permissionClaims/1/identityHash
+  value: IDENTITY_HASH
+- op: add
   path: /spec/permissionClaims/2/identityHash
-  value: bac0b0cc62f4979de088f56e06c76c50e183bb85fbe558e3f5df4d6dd5c76716
+  value: IDENTITY_HASH
+- op: add
+  path: /spec/permissionClaims/3/identityHash
+  value: IDENTITY_HASH

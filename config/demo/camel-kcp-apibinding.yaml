@@ -34,3 +34,6 @@ spec:
     - group: "apps"
       resource: "deployments"
       state: "Accepted"
+    - group: "coordination.k8s.io"
+      resource: "leases"
+      state: "Accepted"

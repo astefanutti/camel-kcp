@@ -37,7 +37,3 @@ spec:
       resource: "deployments"
     - group: "coordination.k8s.io"
       resource: "leases"
-#    - group: ""
-#      resource: "services"
-#    - group: "networking.k8s.io"
-#      resource: "ingresses"
