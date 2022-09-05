@@ -53,7 +53,7 @@ KIND_CLUSTER_PREFIX="kcp-cluster-"
 KCP_CONTROL_CLUSTER_NAME="${KIND_CLUSTER_PREFIX}control"
 ORG_WORKSPACE=root:camel-k
 
-: ${KCP_VERSION:="main"}
+: ${KCP_VERSION:="release-0.8"}
 KCP_SYNCER_IMAGE="ghcr.io/kcp-dev/kcp/syncer:${KCP_VERSION}"
 
 for ((i=1;i<=NUM_CLUSTERS;i++))
