@@ -19,10 +19,10 @@ package main
 
 import (
 	"context"
+	"errors"
 	"flag"
 	"fmt"
 	"math/rand"
-	"os"
 	"reflect"
 	"strconv"
 	"time"
@@ -130,46 +130,25 @@ func main() {
 	exitOnError(clientgoscheme.AddToScheme(scheme), "failed registering types to scheme")
 	exitOnError(apis.AddToScheme(scheme), "failed registering types to scheme")
 
-	// FIXME: cluster-aware event sink
-	broadcaster := record.NewBroadcaster()
-	defer broadcaster.Shutdown()
-	broadcaster = event.NewSinkLessBroadcaster(broadcaster)
-
-	// Common manager options
-	mgrOptions := ctrl.Options{
-		LeaderElection:                options.enableLeaderElection,
-		LeaderElectionID:              options.leaderElectionID,
-		LeaderElectionConfig:          cfg,
-		LeaderElectionResourceLock:    resourcelock.LeasesResourceLock,
-		LeaderElectionReleaseOnCancel: true,
-		HealthProbeBindAddress:        ":" + strconv.Itoa(options.healthProbePort),
-		MetricsBindAddress:            ":" + strconv.Itoa(options.metricsPort),
-		Scheme:                        scheme,
-		EventBroadcaster:              broadcaster,
-	}
-
 	// Clients
 	var discoveryClient discovery.DiscoveryInterface
 	discoveryClient, err = discovery.NewDiscoveryClientForConfig(cfg)
 	exitOnError(err, "failed to create discovery client")
 
-	kcpEnabled := kcpAPIsGroupPresent(discoveryClient)
-
-	var apiExportCfg *rest.Config
-	if kcpEnabled {
-		logger.Info("Looking up virtual workspace URL")
-		apiExportCfg, err = restConfigForAPIExport(ctx, cfg, options.apiExportName)
-		exitOnError(err, "error looking up virtual workspace URL")
-
-		logger.Info("Using virtual workspace URL", "url", apiExportCfg.Host)
-
-		discoveryClient, err = newClusterAwareDiscovery(apiExportCfg)
-		exitOnError(err, "failed to create discovery client for APIExport virtual workspace")
-
-		kubernetes.DiscoveryClient = discoveryClient
-	} else {
-		logger.Info("The apis.kcp.dev group is not present - creating standard manager")
+	if !kcpAPIsGroupPresent(discoveryClient) {
+		exitOnError(errors.New("apis.kcp.dev group is not present"), "")
 	}
+
+	logger.Info("Looking up virtual workspace URL")
+	apiExportCfg, err := restConfigForAPIExport(ctx, cfg, options.apiExportName)
+	exitOnError(err, "error looking up virtual workspace URL")
+
+	logger.Info("Using virtual workspace URL", "url", apiExportCfg.Host)
+	discoveryClient, err = newClusterAwareDiscovery(apiExportCfg)
+	exitOnError(err, "failed to create discovery client for APIExport virtual workspace")
+
+	// TODO: Add an option to pass the entire Camel K client
+	kubernetes.DiscoveryClient = discoveryClient
 
 	// Cache options
 	hasIntegrationLabel, err := labels.NewRequirement(v1.IntegrationLabel, selection.Exists, []string{})
@@ -189,17 +168,27 @@ func main() {
 			Label: selector,
 		}
 	}
-	if kcpEnabled {
-		mgrOptions.NewCache = func(config *rest.Config, options cache.Options) (cache.Cache, error) {
+
+	// FIXME: cluster-aware event sink
+	broadcaster := record.NewBroadcaster()
+	defer broadcaster.Shutdown()
+	broadcaster = event.NewSinkLessBroadcaster(broadcaster)
+
+	// Manager options
+	mgrOptions := ctrl.Options{
+		LeaderElection:                options.enableLeaderElection,
+		LeaderElectionID:              options.leaderElectionID,
+		LeaderElectionConfig:          cfg,
+		LeaderElectionResourceLock:    resourcelock.LeasesResourceLock,
+		LeaderElectionReleaseOnCancel: true,
+		HealthProbeBindAddress:        ":" + strconv.Itoa(options.healthProbePort),
+		MetricsBindAddress:            ":" + strconv.Itoa(options.metricsPort),
+		Scheme:                        scheme,
+		EventBroadcaster:              broadcaster,
+		NewCache: func(config *rest.Config, options cache.Options) (cache.Cache, error) {
 			options.SelectorsByObject = selectors
 			return kcp.NewClusterAwareCache(config, options)
-		}
-	} else {
-		mgrOptions.NewCache = cache.BuilderWithOptions(
-			cache.Options{
-				SelectorsByObject: selectors,
-			},
-		)
+		},
 	}
 
 	operatorNamespace := platform.GetOperatorNamespace()
@@ -217,14 +206,8 @@ func main() {
 		logger.Info("Leader election is disabled!")
 	}
 
-	var mgr ctrl.Manager
-	if kcpEnabled {
-		mgr, err = kcp.NewClusterAwareManager(apiExportCfg, mgrOptions)
-		exitOnError(err, "")
-	} else {
-		mgr, err = ctrl.NewManager(cfg, mgrOptions)
-		exitOnError(err, "")
-	}
+	mgr, err := kcp.NewClusterAwareManager(apiExportCfg, mgrOptions)
+	exitOnError(err, "")
 
 	// exitOnError(
 	// 	mgr.GetFieldIndexer().IndexField(ctx, &corev1.Pod{}, "status.phase",
@@ -304,10 +287,7 @@ func restConfigForAPIExport(ctx context.Context, cfg *rest.Config, apiExportName
 
 func kcpAPIsGroupPresent(discoveryClient discovery.DiscoveryInterface) bool {
 	apiGroupList, err := discoveryClient.ServerGroups()
-	if err != nil {
-		logger.Error(err, "failed to get server groups")
-		os.Exit(1)
-	}
+	exitOnError(err, "failed to get server groups")
 
 	for _, group := range apiGroupList.Groups {
 		if group.Name == apisv1alpha1.SchemeGroupVersion.Group {
