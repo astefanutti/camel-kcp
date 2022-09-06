@@ -145,12 +145,47 @@ sleep 5
 ${KUBECTL_KCP_BIN} workspace use "root"
 ${KUBECTL_KCP_BIN} workspace create "camel-k" --type universal --enter || ${KUBECTL_KCP_BIN} workspace use "camel-k"
 
-# Create control plane sync target and wait for it to be ready
+# Create control workspace
 ${KUBECTL_KCP_BIN} workspace use "${ORG_WORKSPACE}"
 ${KUBECTL_KCP_BIN} workspace create "camel-kcp" --enter || ${KUBECTL_KCP_BIN} workspace use "camel-kcp"
 
+# Create control and data plane placements
+cat <<EOF | kubectl apply -f -
+apiVersion: scheduling.kcp.dev/v1alpha1
+kind: Location
+metadata:
+  name: default
+spec:
+  resource:
+    group: workload.kcp.dev
+    resource: synctargets
+    version: v1alpha1
+  instanceSelector:
+    matchExpressions:
+    - key: org.apache.camel/data-plane
+      operator: Exists
+EOF
+
+cat <<EOF | kubectl apply -f -
+apiVersion: scheduling.kcp.dev/v1alpha1
+kind: Location
+metadata:
+  name: control
+spec:
+  resource:
+    group: workload.kcp.dev
+    resource: synctargets
+    version: v1alpha1
+  instanceSelector:
+    matchExpressions:
+    - key: org.apache.camel/control-plane
+      operator: Exists
+EOF
+
+# Create control plane sync target and wait for it to be ready
 echo "Creating kcp SyncTarget control cluster"
 createSyncTarget $KCP_CONTROL_CLUSTER_NAME 8081 8444 "$registry_addr:$registry_port" "control"
+kubectl label synctarget "control" "org.apache.camel/control-plane="
 kubectl wait --timeout=300s --for=condition=Ready=true synctargets "control"
 
 # Create data plane sync targets and wait for them to be ready
@@ -159,6 +194,7 @@ port80=8082
 port443=8445
 for cluster in $CLUSTERS; do
   createSyncTarget "$cluster" $port80 $port443 "$registry_addr:$registry_port" "$cluster"
+  kubectl label synctarget "$cluster" "org.apache.camel/data-plane="
 
   echo "Deploying Ingress controller to ${cluster}"
   kubeconfig=${TEMP_DIR}/"${cluster}".kubeconfig
