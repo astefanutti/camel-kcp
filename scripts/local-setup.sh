@@ -224,6 +224,21 @@ ${KUBECTL_KCP_BIN} workspace create "demo" --enter || ${KUBECTL_KCP_BIN} workspa
 sed -e "s/IDENTITY_HASH/$identityHash/" config/demo/identity-hash-patch.yaml > config/demo/add-identity-hash.yaml
 ${KUSTOMIZE_BIN} build config/demo | kubectl apply --server-side -f -
 
+# Local registry configuration
+# https://github.com/kubernetes/enhancements/tree/master/keps/sig-cluster-lifecycle/generic/1755-communicating-a-local-registry
+kubectl create ns kube-public
+cat <<EOF | kubectl apply -f -
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: local-registry-hosting
+  namespace: kube-public
+data:
+  localRegistryHosting.v1: |
+    host: "$registry_addr:$registry_port"
+    hostFromClusterNetwork: "$registry_addr:$registry_port"
+EOF
+
 echo ""
 echo "KCP PID          : ${KCP_PID}"
 echo ""
