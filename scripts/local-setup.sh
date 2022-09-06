@@ -67,6 +67,7 @@ createCluster() {
   cluster=$1;
   port80=$2;
   port443=$3;
+  registry=$4;
   cat <<EOF | ${KIND_BIN} create cluster --name "${cluster}" --kubeconfig ${TEMP_DIR}/"${cluster}".kubeconfig --config=-
 kind: Cluster
 apiVersion: kind.x-k8s.io/v1alpha4
@@ -86,12 +87,16 @@ nodes:
   - containerPort: 443
     hostPort: ${port443}
     protocol: TCP
+containerdConfigPatches:
+- |-
+  [plugins."io.containerd.grpc.v1.cri".registry.mirrors."${registry}"]
+    endpoint = ["http://${registry}"]
 EOF
 }
 
 createSyncTarget() {
-  [[ -n "$4" ]] && target=${4} || target=${1}
-  createCluster $1 $2 $3
+  createCluster $1 $2 $3 $4
+  target=$5
 
   kubectl create namespace kcp-syncer --dry-run=client -o yaml | kubectl apply -f -
   ${KUBECTL_KCP_BIN} workload sync "${target}" --kcp-namespace kcp-syncer --syncer-image=${KCP_SYNCER_IMAGE} --output-file ${TEMP_DIR}/"${target}"-syncer.yaml
@@ -105,6 +110,20 @@ clusterCount=$(${KIND_BIN} get clusters | grep ${KIND_CLUSTER_PREFIX} | wc -l)
 if ! [[ $clusterCount =~ "0" ]] ; then
   echo "Deleting previous KinD clusters."
   ${KIND_BIN} get clusters | grep ${KIND_CLUSTER_PREFIX} | xargs "${KIND_BIN}" delete clusters
+fi
+
+# Start local container image registry
+registry_name='registry'
+registry_port='5001'
+if [[ "$OSTYPE" == "darwin"* ]] ; then
+  registry_addr=$(ipconfig getifaddr en0)
+elif [[ "$OSTYPE" == "linux-gnu"* ]]; then
+  registry_addr=$(ip addr | grep 'state UP' -A2 | tail -n1 | awk '{print $2}' | cut -f1 -d'/')
+fi
+if [ "$(docker inspect -f '{{.State.Running}}' "${registry_name}" 2>/dev/null || true)" != 'true' ]; then
+  docker run \
+    -d --restart=always -p "${registry_port}:5000" --name "${registry_name}" \
+    registry:2.8.1
 fi
 
 # Start kcp
@@ -129,8 +148,9 @@ ${KUBECTL_KCP_BIN} workspace create "camel-k" --type universal --enter || ${KUBE
 # Create control plane sync target and wait for it to be ready
 ${KUBECTL_KCP_BIN} workspace use "${ORG_WORKSPACE}"
 ${KUBECTL_KCP_BIN} workspace create "camel-kcp" --enter || ${KUBECTL_KCP_BIN} workspace use "camel-kcp"
+
 echo "Creating kcp SyncTarget control cluster"
-createSyncTarget $KCP_CONTROL_CLUSTER_NAME 8081 8444 "control"
+createSyncTarget $KCP_CONTROL_CLUSTER_NAME 8081 8444 "$registry_addr:$registry_port" "control"
 kubectl wait --timeout=300s --for=condition=Ready=true synctargets "control"
 
 # Create data plane sync targets and wait for them to be ready
@@ -138,7 +158,7 @@ echo "Creating $NUM_CLUSTERS kcp SyncTarget cluster(s)"
 port80=8082
 port443=8445
 for cluster in $CLUSTERS; do
-  createSyncTarget "$cluster" $port80 $port443
+  createSyncTarget "$cluster" $port80 $port443 "$registry_addr:$registry_port" "$cluster"
 
   echo "Deploying Ingress controller to ${cluster}"
   kubeconfig=${TEMP_DIR}/"${cluster}".kubeconfig
