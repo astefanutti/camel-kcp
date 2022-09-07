@@ -39,7 +39,6 @@ COPY controller-runtime/go.sum controller-runtime/go.sum
 RUN go mod download
 
 # Copy the sources
-COPY pkg/ pkg/
 COPY cmd/ cmd/
 
 # Copy sub-modules
