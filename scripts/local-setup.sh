@@ -97,9 +97,10 @@ EOF
 createSyncTarget() {
   createCluster $1 $2 $3 $4
   target=$5
+  resources=$6
 
   kubectl create namespace kcp-syncer --dry-run=client -o yaml | kubectl apply -f -
-  ${KUBECTL_KCP_BIN} workload sync "${target}" --kcp-namespace kcp-syncer --syncer-image=${KCP_SYNCER_IMAGE} --output-file ${TEMP_DIR}/"${target}"-syncer.yaml
+  ${KUBECTL_KCP_BIN} workload sync "${target}" --kcp-namespace kcp-syncer --syncer-image=${KCP_SYNCER_IMAGE} --resources="${resources}" --output-file ${TEMP_DIR}/"${target}"-syncer.yaml
 
   echo "Deploying kcp syncer to ${1}"
   kubectl --kubeconfig ${TEMP_DIR}/"${1}".kubeconfig apply -f ${TEMP_DIR}/"${target}"-syncer.yaml
@@ -184,7 +185,7 @@ EOF
 
 # Create control plane sync target and wait for it to be ready
 echo "Creating kcp SyncTarget control cluster"
-createSyncTarget $KCP_CONTROL_CLUSTER_NAME 8081 8444 "$registry_addr:$registry_port" "control"
+createSyncTarget $KCP_CONTROL_CLUSTER_NAME 8081 8444 "$registry_addr:$registry_port" "control" ""
 kubectl label synctarget "control" "org.apache.camel/control-plane="
 kubectl wait --timeout=300s --for=condition=Ready=true synctargets "control"
 
@@ -193,7 +194,7 @@ echo "Creating $NUM_CLUSTERS kcp SyncTarget cluster(s)"
 port80=8082
 port443=8445
 for cluster in $CLUSTERS; do
-  createSyncTarget "$cluster" $port80 $port443 "$registry_addr:$registry_port" "$cluster"
+  createSyncTarget "$cluster" $port80 $port443 "$registry_addr:$registry_port" "$cluster" "services,ingresses.networking.k8s.io"
   kubectl label synctarget "$cluster" "org.apache.camel/data-plane="
 
   echo "Deploying Ingress controller to ${cluster}"
