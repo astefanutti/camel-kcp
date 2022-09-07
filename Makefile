@@ -16,7 +16,7 @@
 KCP_BRANCH := release-0.8
 NUM_CLUSTERS := 2
 
-IMAGE_TAG_BASE ?= quay.io/astefanutti/camel-kcp
+IMAGE_TAG_BASE ?= ghcr.io/astefanutti/camel-kcp
 IMAGE_TAG ?= latest
 IMG ?= $(IMAGE_TAG_BASE):$(IMAGE_TAG)
 
