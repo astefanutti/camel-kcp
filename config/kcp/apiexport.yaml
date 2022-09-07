@@ -30,10 +30,14 @@ spec:
     - today.kamelets.camel.apache.org
   permissionClaims:
     - group: ""
+      resource: "configmaps"
+    - group: ""
       resource: "secrets"
     - group: ""
-      resource: "configmaps"
+      resource: "services"
     - group: "apps"
       resource: "deployments"
     - group: "coordination.k8s.io"
       resource: "leases"
+    - group: "networking.k8s.io"
+      resource: "ingresses"
