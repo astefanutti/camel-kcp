@@ -37,6 +37,8 @@ jobs:
       sha_short: ${{ steps.vars.outputs.sha_short }}
     steps:
       - uses: actions/checkout@v3
+        with:
+          submodules: recursive
 
       - name: Get the short SHA
         id: vars
