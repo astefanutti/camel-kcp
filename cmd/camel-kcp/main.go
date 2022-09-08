@@ -63,11 +63,9 @@ import (
 
 	"github.com/apache/camel-k/pkg/apis"
 	v1 "github.com/apache/camel-k/pkg/apis/camel/v1"
-	camelclient "github.com/apache/camel-k/pkg/client"
 	"github.com/apache/camel-k/pkg/controller"
 	"github.com/apache/camel-k/pkg/event"
 	"github.com/apache/camel-k/pkg/platform"
-	"github.com/apache/camel-k/pkg/util/kubernetes"
 	logutil "github.com/apache/camel-k/pkg/util/log"
 )
 
@@ -147,9 +145,6 @@ func main() {
 	discoveryClient, err = newClusterAwareDiscovery(apiExportCfg)
 	exitOnError(err, "failed to create discovery client for APIExport virtual workspace")
 
-	// TODO: Add an option to pass the entire Camel K client
-	kubernetes.DiscoveryClient = discoveryClient
-
 	// Cache options
 	hasIntegrationLabel, err := labels.NewRequirement(v1.IntegrationLabel, selection.Exists, []string{})
 	exitOnError(err, "cannot create Integration label selector")
@@ -222,10 +217,10 @@ func main() {
 	logger.Info("Configuring the manager")
 	exitOnError(mgr.AddHealthzCheck("health-probe", healthz.Ping), "Unable add liveness check")
 
-	httpClient, err := kcp.ClusterAwareHTTPClient(apiExportCfg)
-	exitOnError(err, "failed to create cluster aware HTTP client")
+	c, err := NewClient(apiExportCfg, scheme, discoveryClient, mgr.GetClient())
+	exitOnError(err, "failed to create client")
 
-	exitOnError(controller.AddToManager(mgr, camelclient.Options{HTTPClient: httpClient}), "")
+	exitOnError(controller.AddToManager(mgr, c), "")
 
 	// FIXME: workspace initializer
 	// logger.Info("Installing operator resources")
@@ -299,11 +294,4 @@ func kcpAPIsGroupPresent(discoveryClient discovery.DiscoveryInterface) bool {
 		}
 	}
 	return false
-}
-
-// newClusterAwareDiscovery returns a discovery.DiscoveryInterface that works with APIExport virtual workspace API server.
-func newClusterAwareDiscovery(config *rest.Config) (discovery.DiscoveryInterface, error) {
-	c := rest.CopyConfig(config)
-	c.Host += "/clusters/*"
-	return discovery.NewDiscoveryClientForConfig(c)
 }
