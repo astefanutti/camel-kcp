@@ -40,6 +40,8 @@ jobs:
         with:
           submodules: recursive
 
+      - run: cd camel-k && make clean maven-overlay bundle-kamelets
+
       - name: Get the short SHA
         id: vars
         run: echo "::set-output name=sha_short::$(echo ${{ github.sha }} | cut -b -7)"

@@ -80,8 +80,9 @@ test: ## Run tests
 build: ## Build the project
 	go build -o bin ./cmd/...
 
-.PHONY: docker-build
-docker-build: ## Build docker image
+.PHONY: build-image
+build-image: ## Build container image
+	cd camel-k && make clean maven-overlay bundle-kamelets
 	docker build -t ${IMG} .
 
 ##@ Deployment
