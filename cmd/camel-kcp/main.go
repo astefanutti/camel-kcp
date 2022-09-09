@@ -236,6 +236,7 @@ func main() {
 }
 
 // +kubebuilder:rbac:groups="apis.kcp.dev",resources=apiexports,verbs=get;list;watch
+// +kubebuilder:rbac:groups="apis.kcp.dev",resources=apiexports/content,verbs=get;list;watch;create;update;patch;delete
 
 // restConfigForAPIExport returns a *rest.Config properly configured to communicate with the endpoint for the
 // APIExport's virtual workspace.

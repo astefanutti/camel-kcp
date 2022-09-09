@@ -13,3 +13,15 @@ rules:
   - get
   - list
   - watch
+- apiGroups:
+  - apis.kcp.dev
+  resources:
+  - apiexports/content
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - update
+  - patch
+  - watch
