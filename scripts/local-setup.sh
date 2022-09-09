@@ -150,7 +150,7 @@ ${KUBECTL_KCP_BIN} workspace create "camel-k" --type universal --enter || ${KUBE
 ${KUBECTL_KCP_BIN} workspace use "${ORG_WORKSPACE}"
 ${KUBECTL_KCP_BIN} workspace create "camel-kcp" --enter || ${KUBECTL_KCP_BIN} workspace use "camel-kcp"
 
-# Create control and data plane placements
+# Create control and data plane locations
 cat <<EOF | kubectl apply -f -
 apiVersion: scheduling.kcp.dev/v1alpha1
 kind: Location
@@ -183,6 +183,19 @@ spec:
     version: v1alpha1
   instanceSelector:
     matchExpressions:
+    - key: org.apache.camel/control-plane
+      operator: Exists
+EOF
+
+# Update default placement to match control plane location(s)
+cat <<EOF | kubectl apply -f -
+apiVersion: scheduling.kcp.dev/v1alpha1
+kind: Placement
+metadata:
+  name: default
+spec:
+  locationSelectors:
+  - matchExpressions:
     - key: org.apache.camel/control-plane
       operator: Exists
 EOF
