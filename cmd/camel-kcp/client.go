@@ -39,13 +39,6 @@ import (
 	camelv1alpha1 "github.com/apache/camel-k/pkg/client/camel/clientset/versioned/typed/camel/v1alpha1"
 )
 
-// newClusterAwareDiscovery returns a discovery.DiscoveryInterface that works with APIExport virtual workspace API server.
-func newClusterAwareDiscovery(config *rest.Config) (discovery.DiscoveryInterface, error) {
-	c := rest.CopyConfig(config)
-	c.Host += "/clusters/*"
-	return discovery.NewDiscoveryClientForConfig(c)
-}
-
 type kcpClient struct {
 	ctrl.Client
 	discovery discovery.DiscoveryInterface
@@ -56,8 +49,12 @@ type kcpClient struct {
 	restClient rest.Interface
 }
 
-func NewClient(cfg *rest.Config, scheme *runtime.Scheme, discovery discovery.DiscoveryInterface, c ctrl.Client) (client.Client, error) {
+func NewClient(cfg *rest.Config, scheme *runtime.Scheme, c ctrl.Client) (client.Client, error) {
 	httpClient, err := kcp.ClusterAwareHTTPClient(cfg)
+	if err != nil {
+		return nil, err
+	}
+	discoveryClient, err := newClusterAwareDiscovery(cfg)
 	if err != nil {
 		return nil, err
 	}
@@ -69,7 +66,6 @@ func NewClient(cfg *rest.Config, scheme *runtime.Scheme, discovery discovery.Dis
 	if err != nil {
 		return nil, err
 	}
-
 	restClient, err := newRESTClientForConfigAndClient(cfg, httpClient)
 	if err != nil {
 		return nil, err
@@ -77,7 +73,7 @@ func NewClient(cfg *rest.Config, scheme *runtime.Scheme, discovery discovery.Dis
 
 	return &kcpClient{
 		Client:     c,
-		discovery:  discovery,
+		discovery:  discoveryClient,
 		Interface:  clientset,
 		camel:      camelClientset,
 		scheme:     scheme,
@@ -127,6 +123,13 @@ func (c *kcpClient) ScalesClient() (scale.ScalesGetter, error) {
 	mapper := restmapper.NewDiscoveryRESTMapper(groupResources)
 	resolver := scale.NewDiscoveryScaleKindResolver(c.Discovery())
 	return scale.New(c.restClient, mapper, dynamic.LegacyAPIPathResolverFunc, resolver), nil
+}
+
+// newClusterAwareDiscovery returns a discovery.DiscoveryInterface that works with APIExport virtual workspace API server.
+func newClusterAwareDiscovery(config *rest.Config) (discovery.DiscoveryInterface, error) {
+	c := rest.CopyConfig(config)
+	c.Host += "/clusters/*"
+	return discovery.NewDiscoveryClientForConfig(c)
 }
 
 var scaleConverter = scale.NewScaleConverter()

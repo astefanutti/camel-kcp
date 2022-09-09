@@ -23,7 +23,8 @@ import (
 	"flag"
 	"fmt"
 	"math/rand"
-	"reflect"
+	"os"
+	goruntime "runtime"
 	"strconv"
 	"time"
 
@@ -34,7 +35,7 @@ import (
 	appsv1 "k8s.io/api/apps/v1"
 	batchv1 "k8s.io/api/batch/v1"
 	corev1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/fields"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/selection"
@@ -66,6 +67,7 @@ import (
 	"github.com/apache/camel-k/pkg/controller"
 	"github.com/apache/camel-k/pkg/event"
 	"github.com/apache/camel-k/pkg/platform"
+	"github.com/apache/camel-k/pkg/util/defaults"
 	logutil "github.com/apache/camel-k/pkg/util/log"
 )
 
@@ -113,6 +115,16 @@ func init() {
 	klog.SetLogger(logger.AsLogger())
 }
 
+func printVersion() {
+	logger.Info(fmt.Sprintf("Go Version: %s", goruntime.Version()))
+	logger.Info(fmt.Sprintf("Go OS/Arch: %s/%s", goruntime.GOOS, goruntime.GOARCH))
+	logger.Info(fmt.Sprintf("Buildah Version: %v", defaults.BuildahVersion))
+	logger.Info(fmt.Sprintf("Kaniko Version: %v", defaults.KanikoVersion))
+	logger.Info(fmt.Sprintf("Camel K Operator Version: %v", defaults.Version))
+	logger.Info(fmt.Sprintf("Camel K Default Runtime Version: %v", defaults.DefaultRuntimeVersion))
+	logger.Info(fmt.Sprintf("Camel K Git Commit: %v", defaults.GitCommit))
+}
+
 func main() {
 	printVersion()
 
@@ -129,8 +141,7 @@ func main() {
 	exitOnError(apis.AddToScheme(scheme), "failed registering types to scheme")
 
 	// Clients
-	var discoveryClient discovery.DiscoveryInterface
-	discoveryClient, err = discovery.NewDiscoveryClientForConfig(cfg)
+	discoveryClient, err := discovery.NewDiscoveryClientForConfig(cfg)
 	exitOnError(err, "failed to create discovery client")
 
 	if !kcpAPIsGroupPresent(discoveryClient) {
@@ -142,8 +153,6 @@ func main() {
 	exitOnError(err, "error looking up virtual workspace URL")
 
 	logger.Info("Using virtual workspace URL", "url", apiExportCfg.Host)
-	discoveryClient, err = newClusterAwareDiscovery(apiExportCfg)
-	exitOnError(err, "failed to create discovery client for APIExport virtual workspace")
 
 	// Cache options
 	hasIntegrationLabel, err := labels.NewRequirement(v1.IntegrationLabel, selection.Exists, []string{})
@@ -154,14 +163,7 @@ func main() {
 		&appsv1.Deployment{}: {Label: selector},
 		&batchv1.Job{}:       {Label: selector},
 		&servingv1.Service{}: {Label: selector},
-	}
-	if ok, err := isAPIResourceInstalled(discoveryClient, batchv1.SchemeGroupVersion.String(), reflect.TypeOf(batchv1.CronJob{}).Name()); ok && err == nil {
-		selectors[&batchv1.CronJob{}] = struct {
-			Label labels.Selector
-			Field fields.Selector
-		}{
-			Label: selector,
-		}
+		&batchv1.CronJob{}:   {Label: selector},
 	}
 
 	// FIXME: cluster-aware event sink
@@ -217,7 +219,7 @@ func main() {
 	logger.Info("Configuring the manager")
 	exitOnError(mgr.AddHealthzCheck("health-probe", healthz.Ping), "Unable add liveness check")
 
-	c, err := NewClient(apiExportCfg, scheme, discoveryClient, mgr.GetClient())
+	c, err := NewClient(apiExportCfg, scheme, mgr.GetClient())
 	exitOnError(err, "failed to create client")
 
 	exitOnError(controller.AddToManager(mgr, c), "")
@@ -294,4 +296,32 @@ func kcpAPIsGroupPresent(discoveryClient discovery.DiscoveryInterface) bool {
 		}
 	}
 	return false
+}
+
+// getOperatorImage returns the image currently used by the running operator if present (when running out of cluster, it may be absent).
+// nolint: unused
+func getOperatorImage(ctx context.Context, c client.Reader) (string, error) {
+	ns := platform.GetOperatorNamespace()
+	name := platform.GetOperatorPodName()
+	if ns == "" || name == "" {
+		return "", nil
+	}
+
+	pod := corev1.Pod{}
+	if err := c.Get(ctx, client.ObjectKey{Namespace: ns, Name: name}, &pod); err != nil && apierrors.IsNotFound(err) {
+		return "", nil
+	} else if err != nil {
+		return "", err
+	}
+	if len(pod.Spec.Containers) == 0 {
+		return "", fmt.Errorf("no containers found in operator pod")
+	}
+	return pod.Spec.Containers[0].Image, nil
+}
+
+func exitOnError(err error, msg string) {
+	if err != nil {
+		logger.Error(err, msg)
+		os.Exit(1)
+	}
 }
