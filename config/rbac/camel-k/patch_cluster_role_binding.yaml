@@ -15,8 +15,10 @@
 # limitations under the License.
 # ---------------------------------------------------------------------------
 
-resources:
-- ./camel-k
-- service_account.yaml
-- role.yaml
-- cluster_role_binding.yaml
+- op: replace
+  path: /subjects/0/name
+  value: camel-kcp
+- op: add
+  path: /subjects/0/namespace
+  # FIXME: should be automatically replaced
+  value: camel-kcp

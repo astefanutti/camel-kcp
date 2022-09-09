@@ -16,7 +16,18 @@
 # ---------------------------------------------------------------------------
 
 resources:
-- ./camel-k
-- service_account.yaml
-- role.yaml
-- cluster_role_binding.yaml
+- ../../../camel-k/config/rbac
+
+patches:
+  - target:
+      kind: .*
+    path: remove_labels.yaml
+  - target:
+      kind: Role
+    path: patch_role.yaml
+  - target:
+      kind: RoleBinding
+    path: patch_role_binding.yaml
+  - target:
+      kind: ClusterRoleBinding
+    path: patch_cluster_role_binding.yaml

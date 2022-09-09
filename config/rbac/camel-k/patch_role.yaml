@@ -15,8 +15,6 @@
 # limitations under the License.
 # ---------------------------------------------------------------------------
 
-resources:
-- ./camel-k
-- service_account.yaml
-- role.yaml
-- cluster_role_binding.yaml
+- op: replace
+  path: /kind
+  value: ClusterRole
