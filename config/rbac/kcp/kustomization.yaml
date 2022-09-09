@@ -16,6 +16,5 @@
 # ---------------------------------------------------------------------------
 
 resources:
-- service_account.yaml
-- ./camel-k
-- ./kcp
+- role.yaml
+- cluster_role_binding.yaml

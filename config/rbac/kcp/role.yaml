@@ -22,6 +22,6 @@ rules:
   - delete
   - get
   - list
-  - update
   - patch
+  - update
   - watch

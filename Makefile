@@ -52,7 +52,7 @@ clean: ## Clean up temporary files
 
 .PHONY: manifests
 manifests: controller-gen ## Generate ClusterRole objects
-	$(CONTROLLER_GEN) rbac:roleName=camel-kcp paths="./..." output:rbac:artifacts:config=config/rbac
+	$(CONTROLLER_GEN) rbac:roleName=camel-kcp paths="./..." output:rbac:artifacts:config=config/rbac/kcp
 
 .PHONY: apiresourceschemas
 apiresourceschemas: kustomize kcp ## Convert CRDs from config/crds to APIResourceSchemas
