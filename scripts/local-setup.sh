@@ -155,7 +155,9 @@ cat <<EOF | kubectl apply -f -
 apiVersion: scheduling.kcp.dev/v1alpha1
 kind: Location
 metadata:
-  name: default
+  name: data
+  labels:
+    org.apache.camel/data-plane: ""
 spec:
   resource:
     group: workload.kcp.dev
@@ -172,6 +174,8 @@ apiVersion: scheduling.kcp.dev/v1alpha1
 kind: Location
 metadata:
   name: control
+  labels:
+    org.apache.camel/control-plane: ""
 spec:
   resource:
     group: workload.kcp.dev
@@ -224,6 +228,19 @@ ${KUBECTL_KCP_BIN} workspace create "demo" --enter || ${KUBECTL_KCP_BIN} workspa
 # Install APIBinding(s)
 sed -e "s/IDENTITY_HASH/$identityHash/" config/demo/identity-hash-patch.yaml > config/demo/add-identity-hash.yaml
 ${KUSTOMIZE_BIN} build config/demo | kubectl apply --server-side -f -
+
+# Update default placement to match data plane location(s)
+cat <<EOF | kubectl apply -f -
+apiVersion: scheduling.kcp.dev/v1alpha1
+kind: Placement
+metadata:
+  name: default
+spec:
+  locationSelectors:
+  - matchExpressions:
+    - key: org.apache.camel/data-plane
+      operator: Exists
+EOF
 
 # Local registry configuration
 # https://github.com/kubernetes/enhancements/tree/master/keps/sig-cluster-lifecycle/generic/1755-communicating-a-local-registry
