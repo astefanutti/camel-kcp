@@ -99,32 +99,15 @@ uninstall: kcp kustomize ## Uninstall APIResourceSchemas and APIExport from kcp 
 	$(KUSTOMIZE) build config/kcp | kubectl delete --ignore-not-found=$(ignore-not-found) -f -
 
 .PHONY: deploy
-deploy: kustomize generate-ld-config ## Deploy controller to the K8s cluster specified in ~/.kube/config
+deploy: kustomize ## Deploy controller to the K8s cluster (using $KUBECONFIG or ~/.kube/config)
 	cd config/manager && $(KUSTOMIZE) edit set image controller=${IMG}
-	$(KUSTOMIZE) build config/deploy/local | kubectl apply -f -
+	$(KUSTOMIZE) build config/default | kubectl apply -f -
 
 .PHONY: undeploy
-undeploy: ## Undeploy controller from the K8s cluster specified in ~/.kube/config
-	$(KUSTOMIZE) build config/deploy/local | kubectl delete -f -
+undeploy: kustomize ## Undeploy controller from the K8s cluster (using $KUBECONFIG or ~/.kube/config)
+	$(KUSTOMIZE) build config/default | kubectl delete -f -
 
 ## Local Deployment
-LD_DIR=config/deploy/local
-LD_CONTROLLER_CONFIG_ENV=$(LD_DIR)/controller-config.env
-
-$(LD_CONTROLLER_CONFIG_ENV):
-	envsubst \
-		< $(LD_CONTROLLER_CONFIG_ENV).template \
-		> $(LD_CONTROLLER_CONFIG_ENV)
-
-.PHONY: generate-ld-config
-generate-ld-config: $(LD_CONTROLLER_CONFIG_ENV) ## Generate local deployment files
-
-.PHONY: clean-ld-env
-clean-ld-env:
-	-rm -f $(LD_CONTROLLER_CONFIG_ENV)
-
-.PHONY: clean-ld-config
-clean-ld-config: clean-ld-env ## Remove local deployment files
 
 .PHONY: local-setup
 local-setup: export KCP_VERSION=${KCP_BRANCH}
