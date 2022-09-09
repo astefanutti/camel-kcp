@@ -270,14 +270,22 @@ data:
     hostFromClusterNetwork: "$registry_addr:$registry_port"
 EOF
 
+# Switch back to control workspace
+${KUBECTL_KCP_BIN} workspace use "${ORG_WORKSPACE}:camel-kcp"
+
 echo ""
 echo "KCP PID          : ${KCP_PID}"
 echo ""
-echo "The KinD clusters have been registered, and kcp is running, now you should run camel-kcp."
+echo "The KinD clusters have been registered, and kcp is running, now you should run camel-kcp:"
 echo ""
-echo "Run Option 1 (Local):"
+echo " - Run Option 1 (Local):"
 echo ""
 echo "       cd ${PWD}"
 echo "       KUBECONFIG=${KUBECONFIG_KCP_ADMIN} ./bin/camel-kcp"
+echo ""
+echo " - Run Option 2 (Deploy):"
+echo ""
+echo "       cd ${PWD}"
+echo "       KUBECONFIG=${KUBECONFIG_KCP_ADMIN} make deploy"
 echo ""
 read -p "Press enter to exit -> It will kill the kcp process running in background"
