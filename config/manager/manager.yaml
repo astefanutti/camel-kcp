@@ -47,6 +47,7 @@ spec:
 #            - -v=6
 #            - -zap-devel
           image: controller:latest
+          imagePullPolicy: Always
           name: manager
           securityContext:
             allowPrivilegeEscalation: false
