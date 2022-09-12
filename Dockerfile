@@ -68,7 +68,7 @@ RUN mkdir -p ${MAVEN_HOME} \
 
 ADD camel-k/build/_kamelets /kamelets
 COPY camel-k/build/_maven_overlay/ /usr/share/maven/lib/
-ADD camel-k/build/logback.xml /usr/share/maven/conf/
+ADD camel-k/build/_maven_overlay/logback.xml /usr/share/maven/conf/
 
 ENV MAVEN_OPTS="${MAVEN_OPTS} -Dlogback.configurationFile=/usr/share/maven/conf/logback.xml"
 
