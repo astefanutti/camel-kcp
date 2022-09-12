@@ -211,7 +211,7 @@ echo "Creating $NUM_CLUSTERS kcp SyncTarget cluster(s)"
 port80=8082
 port443=8445
 for cluster in $CLUSTERS; do
-  createSyncTarget "$cluster" $port80 $port443 "$registry_addr:$registry_port" "$cluster" "services,ingresses.networking.k8s.io"
+  createSyncTarget "$cluster" $port80 $port443 "$registry_addr:$registry_port" "$cluster" "pods,services,ingresses.networking.k8s.io"
   kubectl label synctarget "$cluster" "org.apache.camel/data-plane="
 
   echo "Deploying Ingress controller to ${cluster}"
