@@ -30,6 +30,8 @@ spec:
     - today.kamelets.camel.apache.org
   permissionClaims:
     - group: ""
+      resource: "pods"
+    - group: ""
       resource: "configmaps"
     - group: ""
       resource: "secrets"

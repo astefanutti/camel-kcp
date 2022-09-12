@@ -26,6 +26,9 @@ spec:
       exportName: camel-kcp
   permissionClaims:
     - group: ""
+      resource: "pods"
+      state: "Accepted"
+    - group: ""
       resource: "configmaps"
       state: "Accepted"
     - group: ""

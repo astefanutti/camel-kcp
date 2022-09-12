@@ -33,3 +33,6 @@
 - op: add
   path: /spec/permissionClaims/5/identityHash
   value: IDENTITY_HASH
+- op: add
+  path: /spec/permissionClaims/6/identityHash
+  value: IDENTITY_HASH
