@@ -187,6 +187,12 @@ spec:
       operator: Exists
 EOF
 
+# Create control plane sync target and wait for it to be ready
+echo "Creating kcp SyncTarget control cluster"
+createSyncTarget $KCP_CONTROL_CLUSTER_NAME 8081 8444 "$registry_addr:$registry_port" "control" ""
+kubectl label synctarget "control" "org.apache.camel/control-plane="
+kubectl wait --timeout=300s --for=condition=Ready=true synctargets "control"
+
 # Update default placement to match control plane location(s)
 cat <<EOF | kubectl apply -f -
 apiVersion: scheduling.kcp.dev/v1alpha1
@@ -199,12 +205,6 @@ spec:
     - key: org.apache.camel/control-plane
       operator: Exists
 EOF
-
-# Create control plane sync target and wait for it to be ready
-echo "Creating kcp SyncTarget control cluster"
-createSyncTarget $KCP_CONTROL_CLUSTER_NAME 8081 8444 "$registry_addr:$registry_port" "control" ""
-kubectl label synctarget "control" "org.apache.camel/control-plane="
-kubectl wait --timeout=300s --for=condition=Ready=true synctargets "control"
 
 # Create data plane sync targets and wait for them to be ready
 echo "Creating $NUM_CLUSTERS kcp SyncTarget cluster(s)"
