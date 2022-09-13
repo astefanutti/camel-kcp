@@ -79,6 +79,9 @@ spec:
                       contextDir:
                         description: can be useful to share info with other tasks
                         type: string
+                      executorImage:
+                        description: docker image to use
+                        type: string
                       image:
                         description: final image name
                         type: string
@@ -602,6 +605,9 @@ spec:
                         type: object
                       contextDir:
                         description: can be useful to share info with other tasks
+                        type: string
+                      executorImage:
+                        description: docker image to use
                         type: string
                       image:
                         description: final image name
@@ -2393,7 +2399,7 @@ spec:
                   properties:
                     auto:
                       description: To automatically add an ingress whenever the integration
-                        uses a HTTP endpoint consumer.
+                        uses an HTTP endpoint consumer.
                       type: boolean
                     configuration:
                       description: 'Legacy trait configuration parameters. Deprecated:
@@ -2405,8 +2411,7 @@ spec:
                         share this common property.
                       type: boolean
                     host:
-                      description: '**Required**. To configure the host exposed by
-                        the ingress.'
+                      description: To configure the host exposed by the ingress.
                       type: string
                   type: object
                 istio:
@@ -3076,9 +3081,13 @@ spec:
                         share this common property.
                       type: boolean
                     nodePort:
-                      description: Enable Service to be exposed as NodePort (default
-                        `false`).
+                      description: 'Enable Service to be exposed as NodePort (default
+                        `false`). Deprecated: Use service type instead.'
                       type: boolean
+                    type:
+                      description: The type of service to be used, either 'ClusterIP',
+                        'NodePort' or 'LoadBalancer'.
+                      type: string
                   type: object
                 service-binding:
                   description: The configuration of Service Binding trait
@@ -4013,7 +4022,7 @@ spec:
                   properties:
                     auto:
                       description: To automatically add an ingress whenever the integration
-                        uses a HTTP endpoint consumer.
+                        uses an HTTP endpoint consumer.
                       type: boolean
                     configuration:
                       description: 'Legacy trait configuration parameters. Deprecated:
@@ -4025,8 +4034,7 @@ spec:
                         share this common property.
                       type: boolean
                     host:
-                      description: '**Required**. To configure the host exposed by
-                        the ingress.'
+                      description: To configure the host exposed by the ingress.
                       type: string
                   type: object
                 istio:
@@ -4696,9 +4704,13 @@ spec:
                         share this common property.
                       type: boolean
                     nodePort:
-                      description: Enable Service to be exposed as NodePort (default
-                        `false`).
+                      description: 'Enable Service to be exposed as NodePort (default
+                        `false`). Deprecated: Use service type instead.'
                       type: boolean
+                    type:
+                      description: The type of service to be used, either 'ClusterIP',
+                        'NodePort' or 'LoadBalancer'.
+                      type: string
                   type: object
                 service-binding:
                   description: The configuration of Service Binding trait
@@ -11220,7 +11232,7 @@ spec:
                   properties:
                     auto:
                       description: To automatically add an ingress whenever the integration
-                        uses a HTTP endpoint consumer.
+                        uses an HTTP endpoint consumer.
                       type: boolean
                     configuration:
                       description: 'Legacy trait configuration parameters. Deprecated:
@@ -11232,8 +11244,7 @@ spec:
                         share this common property.
                       type: boolean
                     host:
-                      description: '**Required**. To configure the host exposed by
-                        the ingress.'
+                      description: To configure the host exposed by the ingress.
                       type: string
                   type: object
                 istio:
@@ -11903,9 +11914,13 @@ spec:
                         share this common property.
                       type: boolean
                     nodePort:
-                      description: Enable Service to be exposed as NodePort (default
-                        `false`).
+                      description: 'Enable Service to be exposed as NodePort (default
+                        `false`). Deprecated: Use service type instead.'
                       type: boolean
+                    type:
+                      description: The type of service to be used, either 'ClusterIP',
+                        'NodePort' or 'LoadBalancer'.
+                      type: string
                   type: object
                 service-binding:
                   description: The configuration of Service Binding trait
@@ -18955,7 +18970,7 @@ spec:
                       properties:
                         auto:
                           description: To automatically add an ingress whenever the
-                            integration uses a HTTP endpoint consumer.
+                            integration uses an HTTP endpoint consumer.
                           type: boolean
                         configuration:
                           description: 'Legacy trait configuration parameters. Deprecated:
@@ -18967,8 +18982,7 @@ spec:
                             traits share this common property.
                           type: boolean
                         host:
-                          description: '**Required**. To configure the host exposed
-                            by the ingress.'
+                          description: To configure the host exposed by the ingress.
                           type: string
                       type: object
                     istio:
@@ -19645,9 +19659,13 @@ spec:
                             traits share this common property.
                           type: boolean
                         nodePort:
-                          description: Enable Service to be exposed as NodePort (default
-                            `false`).
+                          description: 'Enable Service to be exposed as NodePort (default
+                            `false`). Deprecated: Use service type instead.'
                           type: boolean
+                        type:
+                          description: The type of service to be used, either 'ClusterIP',
+                            'NodePort' or 'LoadBalancer'.
+                          type: string
                       type: object
                     service-binding:
                       description: The configuration of Service Binding trait
