@@ -217,7 +217,8 @@ func main() {
 
 	// Probes and controllers
 	logger.Info("Configuring the manager")
-	exitOnError(mgr.AddHealthzCheck("health-probe", healthz.Ping), "Unable add liveness check")
+	exitOnError(mgr.AddHealthzCheck("healthz", healthz.Ping), "Unable to add health check")
+	exitOnError(mgr.AddReadyzCheck("readyz", healthz.Ping), "Unable to add ready check")
 
 	c, err := NewClient(apiExportCfg, scheme, mgr.GetClient())
 	exitOnError(err, "failed to create client")
