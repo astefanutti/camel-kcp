@@ -31,9 +31,6 @@ COPY camel-k/pkg/client/camel/go.sum camel-k/pkg/client/camel/go.sum
 COPY camel-k/pkg/kamelet/repository/go.mod camel-k/pkg/kamelet/repository/go.mod
 COPY camel-k/pkg/kamelet/repository/go.sum camel-k/pkg/kamelet/repository/go.sum
 
-COPY controller-runtime/go.mod controller-runtime/go.mod
-COPY controller-runtime/go.sum controller-runtime/go.sum
-
 # cache deps before building and copying source so that we don't need to re-download as much
 # and so that source changes don't invalidate our downloaded layer
 RUN go mod download
@@ -43,7 +40,6 @@ COPY cmd/ cmd/
 
 # Copy sub-modules
 COPY camel-k/ camel-k/
-COPY controller-runtime/ controller-runtime/
 
 COPY Makefile Makefile
 RUN mkdir bin
