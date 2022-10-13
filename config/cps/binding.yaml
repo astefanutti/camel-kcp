@@ -1,0 +1,45 @@
+---
+apiVersion: apis.kcp.dev/v1alpha1
+kind: APIBinding
+metadata:
+  name: camel-kcp
+spec:
+  permissionClaims:
+    - group: ""
+      identityHash: c276b0033f0becf1035d484e9e49c433cfba051a05adeeced5d1d203a68b5714
+      resource: configmaps
+      state: Accepted
+    - group: ""
+      identityHash: c276b0033f0becf1035d484e9e49c433cfba051a05adeeced5d1d203a68b5714
+      resource: secrets
+      state: Accepted
+    - group: ""
+      identityHash: c276b0033f0becf1035d484e9e49c433cfba051a05adeeced5d1d203a68b5714
+      resource: services
+      state: Accepted
+    - group: apps
+      identityHash: c276b0033f0becf1035d484e9e49c433cfba051a05adeeced5d1d203a68b5714
+      resource: deployments
+      state: Accepted
+    - group: coordination.k8s.io
+      identityHash: c276b0033f0becf1035d484e9e49c433cfba051a05adeeced5d1d203a68b5714
+      resource: leases
+      state: Accepted
+    - group: networking.k8s.io
+      identityHash: c276b0033f0becf1035d484e9e49c433cfba051a05adeeced5d1d203a68b5714
+      resource: ingresses
+      state: Accepted
+  reference:
+    workspace:
+      exportName: camel-kcp
+      path: root:users:gl:vt:rh-sso-astefanu-redhat-com
+---
+apiVersion: apis.kcp.dev/v1alpha1
+kind: APIBinding
+metadata:
+  name: kubernetes
+spec:
+  reference:
+    workspace:
+      path: root:users:gl:vt:rh-sso-astefanu-redhat-com
+      exportName: kubernetes
