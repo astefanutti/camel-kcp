@@ -1,0 +1,23 @@
+apiVersion: apis.kcp.dev/v1alpha1
+kind: APIBinding
+metadata:
+  name: hcg
+spec:
+  permissionClaims:
+    - resource: secrets
+      state: Accepted
+    - identityHash: c276b0033f0becf1035d484e9e49c433cfba051a05adeeced5d1d203a68b5714
+      resource: services
+      state: Accepted
+    - group: apps
+      identityHash: c276b0033f0becf1035d484e9e49c433cfba051a05adeeced5d1d203a68b5714
+      resource: deployments
+      state: Accepted
+    - group: networking.k8s.io
+      identityHash: c276b0033f0becf1035d484e9e49c433cfba051a05adeeced5d1d203a68b5714
+      resource: ingresses
+      state: Accepted
+  reference:
+    workspace:
+      exportName: glbc-connectors
+      path: root:redhat-hcg
