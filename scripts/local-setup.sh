@@ -99,11 +99,23 @@ createSyncTarget() {
   target=$5
   resources=$6
 
+  name="$7[@]"
+  patch=("${!name}")
+
+  dir=${TEMP_DIR}/"${1}"
   kubectl create namespace kcp-syncer --dry-run=client -o yaml | kubectl apply -f -
-  ${KUBECTL_KCP_BIN} workload sync "${target}" --kcp-namespace kcp-syncer --syncer-image=${KCP_SYNCER_IMAGE} --resources="${resources}" --output-file ${TEMP_DIR}/"${target}"-syncer.yaml
+  mkdir "${dir}"
+  ${KUBECTL_KCP_BIN} workload sync "${target}" --kcp-namespace kcp-syncer --syncer-image=${KCP_SYNCER_IMAGE} --resources="${resources}" --output-file "${dir}"/syncer.yaml
+
+  pushd "${dir}"
+  ${KUSTOMIZE_BIN} init --resources syncer.yaml
+  if (( ${#patch[@]} > 0)) ; then
+    ${KUSTOMIZE_BIN} edit add patch "${patch[@]}"
+  fi
+  popd
 
   echo "Deploying kcp syncer to ${1}"
-  kubectl --kubeconfig ${TEMP_DIR}/"${1}".kubeconfig apply -f ${TEMP_DIR}/"${target}"-syncer.yaml
+  ${KUSTOMIZE_BIN} build "${dir}" | kubectl --kubeconfig ${TEMP_DIR}/"${1}".kubeconfig apply --server-side -f -
 }
 
 # Delete existing KinD clusters
@@ -187,9 +199,11 @@ spec:
       operator: Exists
 EOF
 
+emptyPatch=()
+
 # Create control plane sync target and wait for it to be ready
 echo "Creating kcp SyncTarget control cluster"
-createSyncTarget $KCP_CONTROL_CLUSTER_NAME 8081 8444 "$registry_addr:$registry_port" "control" ""
+createSyncTarget $KCP_CONTROL_CLUSTER_NAME 8081 8444 "$registry_addr:$registry_port" "control" "" emptyPatch
 kubectl label synctarget "control" "org.apache.camel/control-plane="
 kubectl wait --timeout=300s --for=condition=Ready=true synctargets "control"
 
@@ -211,7 +225,7 @@ echo "Creating $NUM_CLUSTERS kcp SyncTarget cluster(s)"
 port80=8082
 port443=8445
 for cluster in $CLUSTERS; do
-  createSyncTarget "$cluster" $port80 $port443 "$registry_addr:$registry_port" "$cluster" "pods,services,ingresses.networking.k8s.io"
+  createSyncTarget "$cluster" $port80 $port443 "$registry_addr:$registry_port" "$cluster" "pods,services,ingresses.networking.k8s.io" emptyPatch
   kubectl label synctarget "$cluster" "org.apache.camel/data-plane="
 
   echo "Deploying Ingress controller to ${cluster}"
