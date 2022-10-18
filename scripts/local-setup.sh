@@ -97,7 +97,7 @@ EOF
 createSyncTarget() {
   createCluster $1 $2 $3 $4
   target=$5
-  resources=$6
+  args=$6
 
   name="$7[@]"
   patch=("${!name}")
@@ -105,7 +105,7 @@ createSyncTarget() {
   dir=${TEMP_DIR}/"${1}"
   kubectl create namespace kcp-syncer --dry-run=client -o yaml | kubectl apply -f -
   mkdir "${dir}"
-  ${KUBECTL_KCP_BIN} workload sync "${target}" --kcp-namespace kcp-syncer --syncer-image=${KCP_SYNCER_IMAGE} --resources="${resources}" --output-file "${dir}"/syncer.yaml
+  ${KUBECTL_KCP_BIN} workload sync "${target}" --kcp-namespace kcp-syncer --syncer-image=${KCP_SYNCER_IMAGE} ${args} --output-file "${dir}"/syncer.yaml
 
   pushd "${dir}"
   ${KUSTOMIZE_BIN} init --resources syncer.yaml
@@ -252,7 +252,7 @@ EOF
 )")
 
 for cluster in $CLUSTERS; do
-  createSyncTarget "$cluster" $port80 $port443 "$registry_addr:$registry_port" "$cluster" "pods,services,ingresses.networking.k8s.io" patchSyncerClusterRole
+  createSyncTarget "$cluster" $port80 $port443 "$registry_addr:$registry_port" "$cluster" "--resources=pods,services,ingresses.networking.k8s.io --feature-gates=KCPSyncerTunnel=true" patchSyncerClusterRole
   kubectl label synctarget "$cluster" "org.apache.camel/data-plane="
 
   echo "Deploying Ingress controller to ${cluster}"
