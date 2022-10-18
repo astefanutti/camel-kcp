@@ -199,10 +199,11 @@ spec:
       operator: Exists
 EOF
 
-emptyPatch=()
-
 # Create control plane sync target and wait for it to be ready
 echo "Creating kcp SyncTarget control cluster"
+
+emptyPatch=()
+
 createSyncTarget $KCP_CONTROL_CLUSTER_NAME 8081 8444 "$registry_addr:$registry_port" "control" "" emptyPatch
 kubectl label synctarget "control" "org.apache.camel/control-plane="
 kubectl wait --timeout=300s --for=condition=Ready=true synctargets "control"
@@ -222,10 +223,36 @@ EOF
 
 # Create data plane sync targets and wait for them to be ready
 echo "Creating $NUM_CLUSTERS kcp SyncTarget cluster(s)"
+
 port80=8082
 port443=8445
+patchSyncerClusterRole=(--group rbac.authorization.k8s.io --kind ClusterRole name kcp-syncer-.* --patch "$(cat << 'EOF'
+- op: add
+  path: /rules/-
+  value:
+    apiGroups:
+      - ""
+    resources:
+      - pods
+    verbs:
+      - get
+      - list
+- op: add
+  path: /rules/-
+  value:
+    apiGroups:
+      - ""
+    resources:
+      - pods/log
+      - pods/exec
+      - pods/proxy
+    verbs:
+      - get
+EOF
+)")
+
 for cluster in $CLUSTERS; do
-  createSyncTarget "$cluster" $port80 $port443 "$registry_addr:$registry_port" "$cluster" "pods,services,ingresses.networking.k8s.io" emptyPatch
+  createSyncTarget "$cluster" $port80 $port443 "$registry_addr:$registry_port" "$cluster" "pods,services,ingresses.networking.k8s.io" patchSyncerClusterRole
   kubectl label synctarget "$cluster" "org.apache.camel/data-plane="
 
   echo "Deploying Ingress controller to ${cluster}"
