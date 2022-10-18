@@ -18,9 +18,3 @@
 resources:
   - kubernetes-apibinding.yaml
   - camel-kcp-apibinding.yaml
-
-patchesJson6902:
-  - target:
-      kind: APIBinding
-      name: camel-kcp
-    path: add-identity-hash.yaml

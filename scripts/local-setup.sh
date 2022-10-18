@@ -245,7 +245,7 @@ kubectl wait --timeout=300s --for=condition=Ready=true synctargets ${CLUSTERS}
 identityHash=$(kubectl get apiexport kubernetes -o json | jq -r .status.identityHash)
 
 # Install APIExport
-sed -e "s/IDENTITY_HASH/$identityHash/" config/kcp/identity-hash-patch.yaml > config/kcp/add-identity-hash.yaml
+${KUSTOMIZE_BIN} cfg set config/kcp identity-hash "$identityHash"
 ${KUSTOMIZE_BIN} build config/kcp | kubectl apply --server-side -f -
 
 # Switch to data workspace
@@ -253,7 +253,7 @@ ${KUBECTL_KCP_BIN} workspace use "${ORG_WORKSPACE}"
 ${KUBECTL_KCP_BIN} workspace create "demo" --enter || ${KUBECTL_KCP_BIN} workspace use "demo"
 
 # Install APIBinding(s)
-sed -e "s/IDENTITY_HASH/$identityHash/" config/demo/identity-hash-patch.yaml > config/demo/add-identity-hash.yaml
+${KUSTOMIZE_BIN} cfg set config/demo identity-hash "$identityHash"
 ${KUSTOMIZE_BIN} build config/demo | kubectl apply --server-side -f -
 
 # Update default placement to match data plane location(s)

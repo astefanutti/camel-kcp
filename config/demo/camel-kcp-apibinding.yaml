@@ -25,24 +25,24 @@ spec:
       path: root:camel-k:camel-kcp
       exportName: camel-kcp
   permissionClaims:
-    - group: ""
-      resource: "pods"
-      state: "Accepted"
-    - group: ""
-      resource: "configmaps"
-      state: "Accepted"
-    - group: ""
-      resource: "secrets"
-      state: "Accepted"
-    - group: ""
-      resource: "services"
-      state: "Accepted"
-    - group: "apps"
-      resource: "deployments"
-      state: "Accepted"
-    - group: "coordination.k8s.io"
-      resource: "leases"
-      state: "Accepted"
-    - group: "networking.k8s.io"
-      resource: "ingresses"
-      state: "Accepted"
+  - group: ""
+    resource: configmaps
+    state: Accepted
+  - group: ""
+    resource: secrets
+    state: Accepted
+  - group: ""
+    resource: services
+    state: Accepted
+    identityHash: IDENTITY_HASH # {"$openapi":"identity-hash"}
+  - group: apps
+    resource: deployments
+    state: Accepted
+    identityHash: IDENTITY_HASH # {"$openapi":"identity-hash"}
+  - group: coordination.k8s.io
+    resource: leases
+    state: Accepted
+  - group: networking.k8s.io
+    resource: ingresses
+    state: Accepted
+    identityHash: IDENTITY_HASH # {"$openapi":"identity-hash"}

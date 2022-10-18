@@ -16,14 +16,7 @@
 # ---------------------------------------------------------------------------
 
 resources:
-  - today.apiresourceschemas.yaml
-  - apiexport.yaml
-
+- today.apiresourceschemas.yaml
+- apiexport.yaml
 configurations:
-  - kustomizeconfig.yaml
-
-patchesJson6902:
-  - target:
-      kind: APIExport
-      name: camel-kcp
-    path: add-identity-hash.yaml
+- kustomizeconfig.yaml

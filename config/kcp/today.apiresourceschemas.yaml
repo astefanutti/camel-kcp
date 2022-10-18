@@ -825,7 +825,6 @@ spec:
     storage: true
     subresources:
       status: {}
-
 ---
 apiVersion: apis.kcp.dev/v1alpha1
 kind: APIResourceSchema
@@ -1213,7 +1212,6 @@ spec:
     storage: true
     subresources:
       status: {}
-
 ---
 apiVersion: apis.kcp.dev/v1alpha1
 kind: APIResourceSchema
@@ -1526,7 +1524,6 @@ spec:
     storage: true
     subresources:
       status: {}
-
 ---
 apiVersion: apis.kcp.dev/v1alpha1
 kind: APIResourceSchema
@@ -4778,7 +4775,6 @@ spec:
     storage: true
     subresources:
       status: {}
-
 ---
 apiVersion: apis.kcp.dev/v1alpha1
 kind: APIResourceSchema
@@ -12243,7 +12239,6 @@ spec:
         specReplicasPath: .spec.replicas
         statusReplicasPath: .status.replicas
       status: {}
-
 ---
 apiVersion: apis.kcp.dev/v1alpha1
 kind: APIResourceSchema
@@ -20439,7 +20434,6 @@ spec:
         specReplicasPath: .spec.replicas
         statusReplicasPath: .status.replicas
       status: {}
-
 ---
 apiVersion: apis.kcp.dev/v1alpha1
 kind: APIResourceSchema
@@ -20923,5 +20917,3 @@ spec:
     storage: true
     subresources:
       status: {}
-
----
