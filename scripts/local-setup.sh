@@ -155,6 +155,10 @@ echo "Waiting for kcp server to be ready..."
 wait_for "grep 'Bootstrapped ClusterWorkspaceShard root|root' ${KCP_LOG_FILE}" "kcp" "1m" "5"
 sleep 5
 
+# Get root compute APIExport identity hash
+${KUBECTL_KCP_BIN} workspace use "root:compute"
+identityHash=$(kubectl get apiexport kubernetes -o json | jq -r .status.identityHash)
+
 ${KUBECTL_KCP_BIN} workspace use "root"
 ${KUBECTL_KCP_BIN} workspace create "camel-k" --type universal --enter || ${KUBECTL_KCP_BIN} workspace use "camel-k"
 
@@ -252,7 +256,7 @@ EOF
 )")
 
 for cluster in $CLUSTERS; do
-  createSyncTarget "$cluster" $port80 $port443 "$registry_addr:$registry_port" "$cluster" "--resources=pods,services,ingresses.networking.k8s.io --feature-gates=KCPSyncerTunnel=true" patchSyncerClusterRole
+  createSyncTarget "$cluster" $port80 $port443 "$registry_addr:$registry_port" "$cluster" "--feature-gates=KCPSyncerTunnel=true" patchSyncerClusterRole
   kubectl label synctarget "$cluster" "org.apache.camel/data-plane="
 
   echo "Deploying Ingress controller to ${cluster}"
@@ -267,9 +271,6 @@ for cluster in $CLUSTERS; do
   port443=$((port443 + 1))
 done
 kubectl wait --timeout=300s --for=condition=Ready=true synctargets ${CLUSTERS}
-
-# Install APIs
-identityHash=$(kubectl get apiexport kubernetes -o json | jq -r .status.identityHash)
 
 # Install APIExport
 ${KUSTOMIZE_BIN} cfg set config/kcp identity-hash "$identityHash"
@@ -290,6 +291,12 @@ kind: Placement
 metadata:
   name: default
 spec:
+  locationWorkspace: root:camel-k:camel-kcp
+  locationResource:
+    group: workload.kcp.dev
+    resource: synctargets
+    version: v1alpha1
+  namespaceSelector: {}
   locationSelectors:
   - matchExpressions:
     - key: org.apache.camel/data-plane

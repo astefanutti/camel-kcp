@@ -22,5 +22,5 @@ metadata:
 spec:
   reference:
     workspace:
-      path: root:camel-k:camel-kcp
+      path: root:compute
       exportName: kubernetes
