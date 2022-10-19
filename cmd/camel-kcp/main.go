@@ -206,15 +206,6 @@ func main() {
 	mgr, err := kcp.NewClusterAwareManager(apiExportCfg, mgrOptions)
 	exitOnError(err, "")
 
-	exitOnError(
-		mgr.GetFieldIndexer().IndexField(ctx, &corev1.Pod{}, "status.phase",
-			func(obj client.Object) []string {
-				pod, _ := obj.(*corev1.Pod)
-				return []string{string(pod.Status.Phase)}
-			}),
-		"unable to set up field indexer for status.phase: %v",
-	)
-
 	// Probes and controllers
 	logger.Info("Configuring the manager")
 	exitOnError(mgr.AddHealthzCheck("healthz", healthz.Ping), "Unable to add health check")
