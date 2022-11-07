@@ -93,7 +93,7 @@ func (r *reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 	rlog.Info("Reconciling APIBinding")
 
 	// Add the logical cluster to the context
-	ctx = logicalcluster.WithCluster(ctx, logicalcluster.New(request.ClusterName))
+	_ = logicalcluster.WithCluster(ctx, logicalcluster.New(request.ClusterName))
 
 	return reconcile.Result{}, nil
 }
