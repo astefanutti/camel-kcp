@@ -27,22 +27,28 @@ spec:
   permissionClaims:
   - group: ""
     resource: configmaps
+    all: true
     state: Accepted
   - group: ""
     resource: secrets
+    all: true
     state: Accepted
   - group: ""
     resource: services
+    all: true
     state: Accepted
     identityHash: IDENTITY_HASH # {"$openapi":"identity-hash"}
   - group: apps
     resource: deployments
+    all: true
     state: Accepted
     identityHash: IDENTITY_HASH # {"$openapi":"identity-hash"}
   - group: coordination.k8s.io
     resource: leases
+    all: true
     state: Accepted
   - group: networking.k8s.io
     resource: ingresses
+    all: true
     state: Accepted
     identityHash: IDENTITY_HASH # {"$openapi":"identity-hash"}

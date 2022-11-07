@@ -31,16 +31,22 @@ spec:
   permissionClaims:
   - group: ""
     resource: configmaps
+    all: true
   - group: ""
     resource: secrets
+    all: true
   - group: ""
     resource: services
+    all: true
     identityHash: IDENTITY_HASH # {"$openapi":"identity-hash"}
   - group: apps
     resource: deployments
+    all: true
     identityHash: IDENTITY_HASH # {"$openapi":"identity-hash"}
   - group: coordination.k8s.io
     resource: leases
+    all: true
   - group: networking.k8s.io
     resource: ingresses
+    all: true
     identityHash: IDENTITY_HASH # {"$openapi":"identity-hash"}
