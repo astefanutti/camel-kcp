@@ -37,6 +37,7 @@ RUN go mod download
 
 # Copy the sources
 COPY cmd/ cmd/
+COPY pkg/ pkg/
 
 # Copy sub-modules
 COPY camel-k/ camel-k/
