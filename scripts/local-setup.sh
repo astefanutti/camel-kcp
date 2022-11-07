@@ -209,7 +209,7 @@ echo "Creating kcp SyncTarget control cluster"
 emptyPatch=()
 
 createSyncTarget $KCP_CONTROL_CLUSTER_NAME 8081 8444 "$registry_addr:$registry_port" "control" "" emptyPatch
-kubectl label synctarget "control" "org.apache.camel/control-plane="
+kubectl label --overwrite synctarget "control" "org.apache.camel/control-plane="
 kubectl wait --timeout=300s --for=condition=Ready=true synctargets "control"
 
 # Update default placement to match control plane location(s)
@@ -262,7 +262,7 @@ EOF
 
 for cluster in $CLUSTERS; do
   createSyncTarget "$cluster" $port80 $port443 "$registry_addr:$registry_port" "$cluster" "--feature-gates=KCPSyncerTunnel=true" patchSyncerClusterRole
-  kubectl label synctarget "$cluster" "org.apache.camel/data-plane="
+  kubectl label --overwrite synctarget "$cluster" "org.apache.camel/data-plane="
 
   echo "Deploying Ingress controller to ${cluster}"
   kubeconfig=${TEMP_DIR}/"${cluster}".kubeconfig
