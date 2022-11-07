@@ -7,6 +7,7 @@ require (
 	github.com/apache/camel-k/pkg/apis/camel v1.9.2
 	github.com/apache/camel-k/pkg/client/camel v1.9.2
 	github.com/kcp-dev/kcp/pkg/apis v0.7.0
+	github.com/kcp-dev/logicalcluster/v2 v2.0.0-alpha.3
 	go.uber.org/automaxprocs v1.5.1
 	go.uber.org/zap v1.23.0
 	k8s.io/api v0.24.3
@@ -79,7 +80,6 @@ require (
 	github.com/jpillora/backoff v1.0.0 // indirect
 	github.com/json-iterator/go v1.1.12 // indirect
 	github.com/kcp-dev/apimachinery v0.0.0-20220922165458-607ac5e87531 // indirect
-	github.com/kcp-dev/logicalcluster/v2 v2.0.0-alpha.3 // indirect
 	github.com/kelseyhightower/envconfig v1.4.0 // indirect
 	github.com/klauspost/compress v1.14.4 // indirect
 	github.com/kr/pretty v0.3.0 // indirect
