@@ -219,6 +219,11 @@ kind: Placement
 metadata:
   name: default
 spec:
+  locationResource:
+    group: workload.kcp.dev
+    resource: synctargets
+    version: v1alpha1
+  namespaceSelector: {}
   locationSelectors:
   - matchExpressions:
     - key: org.apache.camel/control-plane
