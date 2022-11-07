@@ -69,6 +69,8 @@ import (
 	"github.com/apache/camel-k/pkg/platform"
 	"github.com/apache/camel-k/pkg/util/defaults"
 	logutil "github.com/apache/camel-k/pkg/util/log"
+
+	"github.com/apache/camel-kcp/pkg/controller/apibinding"
 )
 
 var scheme = runtime.NewScheme()
@@ -139,6 +141,7 @@ func main() {
 	// Register types to scheme
 	exitOnError(clientgoscheme.AddToScheme(scheme), "failed registering types to scheme")
 	exitOnError(apis.AddToScheme(scheme), "failed registering types to scheme")
+	exitOnError(apisv1alpha1.AddToScheme(scheme), "failed registering types to scheme")
 
 	// Clients
 	discoveryClient, err := discovery.NewDiscoveryClientForConfig(cfg)
@@ -222,6 +225,7 @@ func main() {
 	// defer installCancel()
 	// install.OperatorStartupOptionalTools(installCtx, c, "", operatorNamespace, logger)
 	// exitOnError(findOrCreateIntegrationPlatform(installCtx, c, operatorNamespace), "failed to create integration platform")
+	exitOnError(apibinding.Add(mgr, c), "")
 
 	logger.Info("Starting the manager")
 	exitOnError(mgr.Start(ctx), "manager exited non-zero")
