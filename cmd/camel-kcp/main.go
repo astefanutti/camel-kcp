@@ -96,8 +96,6 @@ func init() {
 	flagSet.StringVar(&options.apiExportName, "api-export-name", "", "The name of the APIExport.")
 	flagSet.IntVar(&options.metricsPort, "metrics-port", 8080, "The port of the metrics endpoint.")
 	flagSet.IntVar(&options.healthProbePort, "health-probe-port", 8081, "The port of the health probe endpoint.")
-	flagSet.BoolVar(&options.enableLeaderElection, "leader-election", false, "Enable leader election.")
-	flagSet.StringVar(&options.leaderElectionID, "leader-election-id", "", "Use the given ID as the leader election Lease name")
 
 	opts := ctrlzap.Options{
 		EncoderConfigOptions: []ctrlzap.EncoderConfigOption{
@@ -176,8 +174,8 @@ func main() {
 
 	// Manager options
 	mgrOptions := ctrl.Options{
-		LeaderElection:                options.enableLeaderElection,
-		LeaderElectionID:              options.leaderElectionID,
+		// FIXME: enable leader election
+		LeaderElection:                false,
 		LeaderElectionConfig:          cfg,
 		LeaderElectionResourceLock:    resourcelock.LeasesResourceLock,
 		LeaderElectionReleaseOnCancel: true,
@@ -193,18 +191,12 @@ func main() {
 
 	if _, ok := os.LookupEnv(platform.OperatorNamespaceEnvVariable); !ok {
 		exitOnError(os.Setenv(platform.OperatorNamespaceEnvVariable, platform.DefaultNamespaceName), "")
-		mgrOptions.LeaderElection = false
-		logger.Info("unable to determine namespace for leader election")
 	}
 
 	// Set the operator container image if it runs in-container
 	// FIXME: find a way to retrieve the operator image
 	// platform.OperatorImage, err = getOperatorImage(ctx, c)
 	// exitOnError(err, "cannot get operator container image")
-
-	if !mgrOptions.LeaderElection {
-		logger.Info("Leader election is disabled!")
-	}
 
 	mgr, err := kcp.NewClusterAwareManager(apiExportCfg, mgrOptions)
 	exitOnError(err, "")
