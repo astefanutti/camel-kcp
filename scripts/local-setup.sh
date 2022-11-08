@@ -311,21 +311,6 @@ spec:
       operator: Exists
 EOF
 
-# Local registry configuration
-# https://github.com/kubernetes/enhancements/tree/master/keps/sig-cluster-lifecycle/generic/1755-communicating-a-local-registry
-kubectl create ns kube-public
-cat <<EOF | kubectl apply -f -
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: local-registry-hosting
-  namespace: kube-public
-data:
-  localRegistryHosting.v1: |
-    host: "$registry_addr:$registry_port"
-    hostFromClusterNetwork: "$registry_addr:$registry_port"
-EOF
-
 # Switch back to control workspace
 ${KUBECTL_KCP_BIN} workspace use "${ORG_WORKSPACE}:camel-kcp"
 
