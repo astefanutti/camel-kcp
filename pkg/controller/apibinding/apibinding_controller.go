@@ -32,6 +32,7 @@ import (
 	ctrlutil "sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	"sigs.k8s.io/controller-runtime/pkg/event"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
+	"sigs.k8s.io/controller-runtime/pkg/predicate"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 
 	"github.com/kcp-dev/logicalcluster/v2"
@@ -71,7 +72,7 @@ func add(mgr manager.Manager, r reconcile.Reconciler) error {
 		Named("apibinding-controller").
 		// Watch for changes to primary resource APIBinding
 		For(&apisv1alpha1.APIBinding{}, builder.WithPredicates(
-			platform.FilteringFuncs{
+			predicate.Funcs{
 				UpdateFunc: func(e event.UpdateEvent) bool {
 					binding, ok := e.ObjectNew.(*apisv1alpha1.APIBinding)
 					if !ok {
