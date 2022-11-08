@@ -41,11 +41,10 @@ import (
 
 	v1 "github.com/apache/camel-k/pkg/apis/camel/v1"
 	"github.com/apache/camel-k/pkg/client"
-	"github.com/apache/camel-k/pkg/platform"
 	"github.com/apache/camel-k/pkg/util/monitoring"
-)
 
-const defaultNamespaceName = "camel-k"
+	"github.com/apache/camel-kcp/pkg/platform"
+)
 
 func Add(mgr manager.Manager, c client.Client) error {
 	return add(mgr, newReconciler(mgr, c))
@@ -105,7 +104,7 @@ func (r *reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 
 	namespaceName := platform.GetOperatorNamespace()
 	if namespaceName == "" {
-		namespaceName = defaultNamespaceName
+		namespaceName = platform.DefaultNamespaceName
 	}
 
 	if err := r.maybeCreateNamespace(ctx, namespaceName); err != nil {
