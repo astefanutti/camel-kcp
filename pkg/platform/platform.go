@@ -29,4 +29,5 @@ const (
 
 var (
 	GetOperatorNamespace = platform.GetOperatorNamespace
+	GetOperatorPodName   = platform.GetOperatorPodName
 )

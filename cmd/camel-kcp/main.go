@@ -66,11 +66,11 @@ import (
 	v1 "github.com/apache/camel-k/pkg/apis/camel/v1"
 	"github.com/apache/camel-k/pkg/controller"
 	"github.com/apache/camel-k/pkg/event"
-	"github.com/apache/camel-k/pkg/platform"
 	"github.com/apache/camel-k/pkg/util/defaults"
 	logutil "github.com/apache/camel-k/pkg/util/log"
 
 	"github.com/apache/camel-kcp/pkg/controller/apibinding"
+	"github.com/apache/camel-kcp/pkg/platform"
 )
 
 var scheme = runtime.NewScheme()
@@ -191,8 +191,8 @@ func main() {
 		},
 	}
 
-	operatorNamespace := platform.GetOperatorNamespace()
-	if operatorNamespace == "" {
+	if _, ok := os.LookupEnv(platform.OperatorNamespaceEnvVariable); !ok {
+		exitOnError(os.Setenv(platform.OperatorNamespaceEnvVariable, platform.DefaultNamespaceName), "")
 		mgrOptions.LeaderElection = false
 		logger.Info("unable to determine namespace for leader election")
 	}
