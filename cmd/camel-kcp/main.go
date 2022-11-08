@@ -224,7 +224,6 @@ func main() {
 	// installCtx, installCancel := context.WithTimeout(ctx, 1*time.Minute)
 	// defer installCancel()
 	// install.OperatorStartupOptionalTools(installCtx, c, "", operatorNamespace, logger)
-	// exitOnError(findOrCreateIntegrationPlatform(installCtx, c, operatorNamespace), "failed to create integration platform")
 	exitOnError(apibinding.Add(mgr, c), "")
 
 	logger.Info("Starting the manager")

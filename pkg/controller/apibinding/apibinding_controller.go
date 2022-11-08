@@ -20,12 +20,16 @@ package apibinding
 import (
 	"context"
 
+	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/client-go/tools/record"
 
 	"sigs.k8s.io/controller-runtime/pkg/builder"
 	ctrl "sigs.k8s.io/controller-runtime/pkg/client"
+	ctrlutil "sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	"sigs.k8s.io/controller-runtime/pkg/event"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
@@ -34,10 +38,13 @@ import (
 
 	apisv1alpha1 "github.com/kcp-dev/kcp/pkg/apis/apis/v1alpha1"
 
+	v1 "github.com/apache/camel-k/pkg/apis/camel/v1"
 	"github.com/apache/camel-k/pkg/client"
 	"github.com/apache/camel-k/pkg/platform"
 	"github.com/apache/camel-k/pkg/util/monitoring"
 )
+
+const defaultNamespaceName = "camel-k"
 
 func Add(mgr manager.Manager, c client.Client) error {
 	return add(mgr, newReconciler(mgr, c))
@@ -89,11 +96,66 @@ type reconciler struct {
 }
 
 func (r *reconciler) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {
-	rlog := Log.WithValues("request-namespace", request.Namespace, "request-name", request.Name)
+	rlog := Log.WithValues("request-name", request.Name)
 	rlog.Info("Reconciling APIBinding")
 
 	// Add the logical cluster to the context
-	_ = logicalcluster.WithCluster(ctx, logicalcluster.New(request.ClusterName))
+	ctx = logicalcluster.WithCluster(ctx, logicalcluster.New(request.ClusterName))
+
+	namespaceName := platform.GetOperatorNamespace()
+	if namespaceName == "" {
+		namespaceName = defaultNamespaceName
+	}
+
+	if err := r.maybeCreateNamespace(ctx, namespaceName); err != nil {
+		return reconcile.Result{}, err
+	}
+
+	ip := v1.NewIntegrationPlatform(namespaceName, platform.DefaultPlatformName)
+
+	if err := r.createOrPatchPlatform(ctx, &ip); err != nil {
+		return reconcile.Result{}, err
+	}
 
 	return reconcile.Result{}, nil
+}
+
+func (r *reconciler) maybeCreateNamespace(ctx context.Context, name string) error {
+	_, err := r.client.CoreV1().Namespaces().Get(ctx, name, metav1.GetOptions{})
+	if err == nil {
+		return nil
+	} else if !errors.IsNotFound(err) {
+		return err
+	}
+
+	namespace := &corev1.Namespace{
+		TypeMeta: metav1.TypeMeta{
+			APIVersion: "v1",
+			Kind:       "Namespace",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name: name,
+		},
+	}
+
+	_, err = r.client.CoreV1().Namespaces().Create(ctx, namespace, metav1.CreateOptions{})
+	return err
+}
+
+func (r *reconciler) createOrPatchPlatform(ctx context.Context, ip *v1.IntegrationPlatform) error {
+	if _, err := ctrlutil.CreateOrPatch(ctx, r.client, ip, func() error {
+		emptyRegistry := v1.RegistrySpec{}
+		if ip.Spec.Build.Registry == emptyRegistry {
+			// FIXME: configuration
+			ip.Spec.Build.Registry = v1.RegistrySpec{
+				Address:  "192.168.0.24:5001",
+				Insecure: true,
+			}
+		}
+		return nil
+	}); err != nil {
+		return err
+	}
+
+	return nil
 }
