@@ -30,6 +30,11 @@ spec:
   - today.kamelets.camel.apache.org
   permissionClaims:
   - group: ""
+    resource: namespaces
+    resourceSelector:
+    - namespace: ""
+      name: camel-k
+  - group: ""
     resource: configmaps
     all: true
   - group: ""

@@ -26,6 +26,12 @@ spec:
       exportName: camel-kcp
   permissionClaims:
   - group: ""
+    resource: namespaces
+    resourceSelector:
+    - namespace: ""
+      name: camel-k
+    state: Accepted
+  - group: ""
     resource: configmaps
     all: true
     state: Accepted
