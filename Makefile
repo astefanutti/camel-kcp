@@ -54,6 +54,10 @@ clean: ## Clean up temporary files
 manifests: controller-gen ## Generate ClusterRole objects
 	$(CONTROLLER_GEN) rbac:roleName=camel-kcp paths="./..." output:rbac:artifacts:config=config/rbac/kcp
 
+.PHONY: generate
+generate: controller-gen ## Generate code containing DeepCopy, DeepCopyInto, and DeepCopyObject method implementations
+	$(CONTROLLER_GEN) object:headerFile="hack/boilerplate.go.txt" paths="./..."
+
 .PHONY: apiresourceschemas
 apiresourceschemas: kustomize kcp ## Convert CRDs from config/crds to APIResourceSchemas
 	$(KUSTOMIZE) build config/crd | $(KUBECTL_KCP_BIN) crd snapshot -f - --prefix $(APIEXPORT_PREFIX) > config/kcp/$(APIEXPORT_PREFIX).apiresourceschemas.yaml

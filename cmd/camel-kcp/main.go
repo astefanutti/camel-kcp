@@ -25,7 +25,6 @@ import (
 	"math/rand"
 	"os"
 	goruntime "runtime"
-	"strconv"
 	"time"
 
 	"go.uber.org/automaxprocs/maxprocs"
@@ -69,6 +68,7 @@ import (
 	"github.com/apache/camel-k/pkg/util/defaults"
 	logutil "github.com/apache/camel-k/pkg/util/log"
 
+	"github.com/apache/camel-kcp/pkg/config"
 	"github.com/apache/camel-kcp/pkg/controller/apibinding"
 	"github.com/apache/camel-kcp/pkg/platform"
 )
@@ -78,24 +78,17 @@ var scheme = runtime.NewScheme()
 var logger = logutil.Log.WithName("kcp")
 
 var options struct {
-	// The name of the APIExport
-	apiExportName string
-	// The port of the metrics endpoint
-	metricsPort int
-	// The port of the health probe endpoint
-	healthProbePort int
-	// Enable leader election
-	enableLeaderElection bool
-	// Leader election id
-	leaderElectionID string
+	// The path of the configuration file
+	configFilePath string
 }
 
 func init() {
 	flagSet := flag.CommandLine
 
-	flagSet.StringVar(&options.apiExportName, "api-export-name", "", "The name of the APIExport.")
-	flagSet.IntVar(&options.metricsPort, "metrics-port", 8080, "The port of the metrics endpoint.")
-	flagSet.IntVar(&options.healthProbePort, "health-probe-port", 8081, "The port of the health probe endpoint.")
+	flag.StringVar(&options.configFilePath, "config", "config.yaml",
+		"The controller will load its initial configuration from this file. "+
+			"Omit this flag to use the default configuration values. "+
+			"Command-line flags override configuration from this file.")
 
 	opts := ctrlzap.Options{
 		EncoderConfigOptions: []ctrlzap.EncoderConfigOption{
@@ -107,8 +100,8 @@ func init() {
 			zap.AddCaller(),
 		},
 	}
-	opts.BindFlags(flag.CommandLine)
-	klog.InitFlags(flag.CommandLine)
+	opts.BindFlags(flagSet)
+	klog.InitFlags(flagSet)
 	flag.Parse()
 
 	log.SetLogger(ctrlzap.New(ctrlzap.UseFlagOptions(&opts)))
@@ -130,32 +123,23 @@ func main() {
 
 	rand.Seed(time.Now().UTC().UnixNano())
 
-	_, err := maxprocs.Set(maxprocs.Logger(func(f string, a ...interface{}) { logger.Info(fmt.Sprintf(f, a)) }))
-	exitOnError(err, "failed to set GOMAXPROCS from cgroups")
-
 	ctx := ctrl.SetupSignalHandler()
 	cfg := ctrl.GetConfigOrDie()
 
-	// Register types to scheme
+	// Environment
+	_, err := maxprocs.Set(maxprocs.Logger(func(f string, a ...interface{}) { logger.Info(fmt.Sprintf(f, a)) }))
+	exitOnError(err, "failed to set GOMAXPROCS from cgroups")
+
+	if _, ok := os.LookupEnv(platform.OperatorNamespaceEnvVariable); !ok {
+		exitOnError(os.Setenv(platform.OperatorNamespaceEnvVariable, platform.DefaultNamespaceName), "")
+	}
+
+	// Scheme
 	exitOnError(clientgoscheme.AddToScheme(scheme), "failed registering types to scheme")
 	exitOnError(apis.AddToScheme(scheme), "failed registering types to scheme")
 	exitOnError(apisv1alpha1.AddToScheme(scheme), "failed registering types to scheme")
 
-	// Clients
-	discoveryClient, err := discovery.NewDiscoveryClientForConfig(cfg)
-	exitOnError(err, "failed to create discovery client")
-
-	if !kcpAPIsGroupPresent(discoveryClient) {
-		exitOnError(errors.New("apis.kcp.dev group is not present"), "")
-	}
-
-	logger.Info("Looking up virtual workspace URL")
-	apiExportCfg, err := restConfigForAPIExport(ctx, cfg, options.apiExportName)
-	exitOnError(err, "error looking up virtual workspace URL")
-
-	logger.Info("Using virtual workspace URL", "url", apiExportCfg.Host)
-
-	// Cache options
+	// Configuration
 	hasIntegrationLabel, err := labels.NewRequirement(v1.IntegrationLabel, selection.Exists, []string{})
 	exitOnError(err, "cannot create Integration label selector")
 	selector := labels.NewSelector().Add(*hasIntegrationLabel)
@@ -172,15 +156,14 @@ func main() {
 	defer broadcaster.Shutdown()
 	broadcaster = event.NewSinkLessBroadcaster(broadcaster)
 
-	// Manager options
+	// FIXME: enable leader election
 	mgrOptions := ctrl.Options{
-		// FIXME: enable leader election
 		LeaderElection:                false,
 		LeaderElectionConfig:          cfg,
 		LeaderElectionResourceLock:    resourcelock.LeasesResourceLock,
 		LeaderElectionReleaseOnCancel: true,
-		HealthProbeBindAddress:        ":" + strconv.Itoa(options.healthProbePort),
-		MetricsBindAddress:            ":" + strconv.Itoa(options.metricsPort),
+		HealthProbeBindAddress:        ":8081",
+		MetricsBindAddress:            ":8080",
 		Scheme:                        scheme,
 		EventBroadcaster:              broadcaster,
 		NewCache: func(config *rest.Config, options cache.Options) (cache.Cache, error) {
@@ -189,19 +172,35 @@ func main() {
 		},
 	}
 
-	if _, ok := os.LookupEnv(platform.OperatorNamespaceEnvVariable); !ok {
-		exitOnError(os.Setenv(platform.OperatorNamespaceEnvVariable, platform.DefaultNamespaceName), "")
+	camelCfg := &config.ControllerConfig{
+		APIExportName: "camel-kcp",
+	}
+	_, err = mgrOptions.AndFrom(ctrl.ConfigFile().AtPath(options.configFilePath).OfKind(camelCfg))
+	exitOnError(err, "error loading controller configuration")
+
+	// Bootstrap
+	discoveryClient, err := discovery.NewDiscoveryClientForConfig(cfg)
+	exitOnError(err, "failed to create discovery client")
+
+	if !kcpAPIsGroupPresent(discoveryClient) {
+		exitOnError(errors.New("apis.kcp.dev group is not present"), "")
 	}
 
+	logger.Info("Looking up virtual workspace URL")
+	apiExportCfg, err := restConfigForAPIExport(ctx, cfg, camelCfg.APIExportName)
+	exitOnError(err, "error looking up virtual workspace URL")
+
+	logger.Info("Using virtual workspace URL", "url", apiExportCfg.Host)
+
 	// Set the operator container image if it runs in-container
-	// FIXME: find a way to retrieve the operator image
+	// FIXME: find a way to retrieve the image
 	// platform.OperatorImage, err = getOperatorImage(ctx, c)
 	// exitOnError(err, "cannot get operator container image")
 
+	// Manager
 	mgr, err := kcp.NewClusterAwareManager(apiExportCfg, mgrOptions)
 	exitOnError(err, "")
 
-	// Probes and controllers
 	logger.Info("Configuring the manager")
 	exitOnError(mgr.AddHealthzCheck("healthz", healthz.Ping), "Unable to add health check")
 	exitOnError(mgr.AddReadyzCheck("readyz", healthz.Ping), "Unable to add ready check")
