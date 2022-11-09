@@ -129,14 +129,6 @@ func main() {
 	ctx := ctrl.SetupSignalHandler()
 	cfg := ctrl.GetConfigOrDie()
 
-	// Environment
-	_, err := maxprocs.Set(maxprocs.Logger(func(f string, a ...interface{}) { logger.Info(fmt.Sprintf(f, a)) }))
-	exitOnError(err, "failed to set GOMAXPROCS from cgroups")
-
-	if _, ok := os.LookupEnv(platform.OperatorNamespaceEnvVariable); !ok {
-		exitOnError(os.Setenv(platform.OperatorNamespaceEnvVariable, platform.DefaultNamespaceName), "")
-	}
-
 	// Scheme
 	exitOnError(clientgoscheme.AddToScheme(scheme), "failed registering types to scheme")
 	exitOnError(apis.AddToScheme(scheme), "failed registering types to scheme")
@@ -190,6 +182,16 @@ func main() {
 	}
 	_, err = mgrOptions.AndFrom(ctrl.ConfigFile().AtPath(options.configFilePath).OfKind(svcCfg))
 	exitOnError(err, "error loading controller configuration")
+
+	// Environment
+	_, err = maxprocs.Set(maxprocs.Logger(func(f string, a ...interface{}) { logger.Info(fmt.Sprintf(f, a)) }))
+	exitOnError(err, "failed to set GOMAXPROCS from cgroups")
+
+	if ip := svcCfg.Service.OnAPIBinding.DefaultPlatform; ip != nil && ip.Namespace != "" {
+		exitOnError(os.Setenv(platform.OperatorNamespaceEnvVariable, ip.Namespace), "")
+	} else {
+		exitOnError(os.Setenv(platform.OperatorNamespaceEnvVariable, platform.DefaultNamespaceName), "")
+	}
 
 	// Bootstrap
 	discoveryClient, err := discovery.NewDiscoveryClientForConfig(cfg)
