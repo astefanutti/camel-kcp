@@ -23,12 +23,10 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/client-go/tools/record"
 
 	"sigs.k8s.io/controller-runtime/pkg/builder"
-	ctrl "sigs.k8s.io/controller-runtime/pkg/client"
 	ctrlutil "sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	"sigs.k8s.io/controller-runtime/pkg/event"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
@@ -47,29 +45,8 @@ import (
 )
 
 func Add(mgr manager.Manager, c client.Client) error {
-	return add(mgr, newReconciler(mgr, c))
-}
-
-func newReconciler(mgr manager.Manager, c client.Client) reconcile.Reconciler {
-	return monitoring.NewInstrumentedReconciler(
-		&reconciler{
-			client:   c,
-			reader:   mgr.GetAPIReader(),
-			scheme:   mgr.GetScheme(),
-			recorder: mgr.GetEventRecorderFor("camel-kcp-apibinding-controller"),
-		},
-		schema.GroupVersionKind{
-			Group:   apisv1alpha1.SchemeGroupVersion.Group,
-			Version: apisv1alpha1.SchemeGroupVersion.Version,
-			Kind:    "APIBinding",
-		},
-	)
-}
-
-func add(mgr manager.Manager, r reconcile.Reconciler) error {
 	return builder.ControllerManagedBy(mgr).
 		Named("apibinding-controller").
-		// Watch for changes to primary resource APIBinding
 		For(&apisv1alpha1.APIBinding{}, builder.WithPredicates(
 			predicate.Funcs{
 				UpdateFunc: func(e event.UpdateEvent) bool {
@@ -80,18 +57,23 @@ func add(mgr manager.Manager, r reconcile.Reconciler) error {
 					return binding.Status.Phase == apisv1alpha1.APIBindingPhaseBound
 				},
 			})).
-		Complete(r)
+		Complete(monitoring.NewInstrumentedReconciler(
+			&reconciler{
+				client:   c,
+				recorder: mgr.GetEventRecorderFor("camel-kcp-apibinding-controller"),
+			},
+			schema.GroupVersionKind{
+				Group:   apisv1alpha1.SchemeGroupVersion.Group,
+				Version: apisv1alpha1.SchemeGroupVersion.Version,
+				Kind:    "APIBinding",
+			},
+		))
 }
 
 var _ reconcile.Reconciler = &reconciler{}
 
 type reconciler struct {
-	// Split client that reads objects from the cache and writes to the API server.
-	client client.Client
-	// Non-caching client to be used whenever caching may cause race conditions,
-	// like in the builds scheduling critical section.
-	reader   ctrl.Reader
-	scheme   *runtime.Scheme
+	client   client.Client
 	recorder record.EventRecorder
 }
 
