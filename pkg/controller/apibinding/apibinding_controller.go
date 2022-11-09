@@ -27,7 +27,7 @@ import (
 	"k8s.io/client-go/tools/record"
 
 	"sigs.k8s.io/controller-runtime/pkg/builder"
-	ctrlutil "sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
+	ctrl "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/event"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
@@ -41,10 +41,11 @@ import (
 	"github.com/apache/camel-k/pkg/client"
 	"github.com/apache/camel-k/pkg/util/monitoring"
 
+	"github.com/apache/camel-kcp/pkg/config"
 	"github.com/apache/camel-kcp/pkg/platform"
 )
 
-func Add(mgr manager.Manager, c client.Client) error {
+func Add(mgr manager.Manager, c client.Client, cfg *config.ServiceConfiguration) error {
 	return builder.ControllerManagedBy(mgr).
 		Named("apibinding-controller").
 		For(&apisv1alpha1.APIBinding{}, builder.WithPredicates(
@@ -59,6 +60,7 @@ func Add(mgr manager.Manager, c client.Client) error {
 			})).
 		Complete(monitoring.NewInstrumentedReconciler(
 			&reconciler{
+				cfg:      cfg,
 				client:   c,
 				recorder: mgr.GetEventRecorderFor("camel-kcp-apibinding-controller"),
 			},
@@ -73,6 +75,7 @@ func Add(mgr manager.Manager, c client.Client) error {
 var _ reconcile.Reconciler = &reconciler{}
 
 type reconciler struct {
+	cfg      *config.ServiceConfiguration
 	client   client.Client
 	recorder record.EventRecorder
 }
@@ -84,19 +87,21 @@ func (r *reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 	// Add the logical cluster to the context
 	ctx = logicalcluster.WithCluster(ctx, logicalcluster.New(request.ClusterName))
 
-	namespaceName := platform.GetOperatorNamespace()
-	if namespaceName == "" {
-		namespaceName = platform.DefaultNamespaceName
-	}
+	if ip := r.cfg.Service.OnAPIBinding.DefaultPlatform; ip != nil {
+		if ip.Namespace == "" {
+			ip.Namespace = platform.GetOperatorNamespace()
+		}
+		if ip.Name == "" {
+			ip.Name = platform.DefaultPlatformName
+		}
 
-	if err := r.maybeCreateNamespace(ctx, namespaceName); err != nil {
-		return reconcile.Result{}, err
-	}
+		if err := r.maybeCreateNamespace(ctx, ip.Namespace); err != nil {
+			return reconcile.Result{}, err
+		}
 
-	ip := v1.NewIntegrationPlatform(namespaceName, platform.DefaultPlatformName)
-
-	if err := r.createOrPatchPlatform(ctx, &ip); err != nil {
-		return reconcile.Result{}, err
+		if err := r.maybeCreatePlatform(ctx, ip); err != nil {
+			return reconcile.Result{}, err
+		}
 	}
 
 	return reconcile.Result{}, nil
@@ -124,18 +129,15 @@ func (r *reconciler) maybeCreateNamespace(ctx context.Context, name string) erro
 	return err
 }
 
-func (r *reconciler) createOrPatchPlatform(ctx context.Context, ip *v1.IntegrationPlatform) error {
-	if _, err := ctrlutil.CreateOrPatch(ctx, r.client, ip, func() error {
-		emptyRegistry := v1.RegistrySpec{}
-		if ip.Spec.Build.Registry == emptyRegistry {
-			// FIXME: configuration
-			ip.Spec.Build.Registry = v1.RegistrySpec{
-				Address:  "192.168.0.24:5001",
-				Insecure: true,
-			}
-		}
-		return nil
-	}); err != nil {
+func (r *reconciler) maybeCreatePlatform(ctx context.Context, ip *config.IntegrationPlatform) error {
+	p := &v1.IntegrationPlatform{
+		ObjectMeta: ip.ObjectMeta,
+		Spec:       ip.Spec,
+	}
+
+	if err := r.client.Get(ctx, ctrl.ObjectKeyFromObject(p), p); errors.IsNotFound(err) {
+		return r.client.Create(ctx, p)
+	} else if err != nil {
 		return err
 	}
 

@@ -172,10 +172,12 @@ func main() {
 		},
 	}
 
-	camelCfg := &config.ControllerConfig{
-		APIExportName: "camel-kcp",
+	svcCfg := &config.ServiceConfiguration{
+		Service: config.ServiceConfigurationSpec{
+			APIExportName: "camel-kcp",
+		},
 	}
-	_, err = mgrOptions.AndFrom(ctrl.ConfigFile().AtPath(options.configFilePath).OfKind(camelCfg))
+	_, err = mgrOptions.AndFrom(ctrl.ConfigFile().AtPath(options.configFilePath).OfKind(svcCfg))
 	exitOnError(err, "error loading controller configuration")
 
 	// Bootstrap
@@ -187,7 +189,7 @@ func main() {
 	}
 
 	logger.Info("Looking up virtual workspace URL")
-	apiExportCfg, err := restConfigForAPIExport(ctx, cfg, camelCfg.APIExportName)
+	apiExportCfg, err := restConfigForAPIExport(ctx, cfg, svcCfg.Service.APIExportName)
 	exitOnError(err, "error looking up virtual workspace URL")
 
 	logger.Info("Using virtual workspace URL", "url", apiExportCfg.Host)
@@ -215,7 +217,7 @@ func main() {
 	// installCtx, installCancel := context.WithTimeout(ctx, 1*time.Minute)
 	// defer installCancel()
 	// install.OperatorStartupOptionalTools(installCtx, c, "", operatorNamespace, logger)
-	exitOnError(apibinding.Add(mgr, c), "")
+	exitOnError(apibinding.Add(mgr, c, svcCfg), "")
 
 	logger.Info("Starting the manager")
 	exitOnError(mgr.Start(ctx), "manager exited non-zero")
