@@ -42,16 +42,19 @@ import (
 	"k8s.io/client-go/discovery"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/tools/record"
+	"k8s.io/utils/pointer"
 	// Import all Kubernetes client auth plugins (e.g. Azure, GCP, OIDC, etc.)
 	// to ensure that exec-entrypoint and run can make use of them.
 	_ "k8s.io/client-go/plugin/pkg/client/auth"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/leaderelection/resourcelock"
+	configv1alpha1 "k8s.io/component-base/config/v1alpha1"
 	"k8s.io/klog/v2"
 
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/cache"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	ctrlcfg "sigs.k8s.io/controller-runtime/pkg/config/v1alpha1"
 	"sigs.k8s.io/controller-runtime/pkg/healthz"
 	"sigs.k8s.io/controller-runtime/pkg/kcp"
 	"sigs.k8s.io/controller-runtime/pkg/log"
@@ -158,12 +161,8 @@ func main() {
 
 	// FIXME: enable leader election
 	mgrOptions := ctrl.Options{
-		LeaderElection:                false,
 		LeaderElectionConfig:          cfg,
-		LeaderElectionResourceLock:    resourcelock.LeasesResourceLock,
 		LeaderElectionReleaseOnCancel: true,
-		HealthProbeBindAddress:        ":8081",
-		MetricsBindAddress:            ":8080",
 		Scheme:                        scheme,
 		EventBroadcaster:              broadcaster,
 		NewCache: func(config *rest.Config, options cache.Options) (cache.Cache, error) {
@@ -173,6 +172,18 @@ func main() {
 	}
 
 	svcCfg := &config.ServiceConfiguration{
+		ControllerManagerConfigurationSpec: ctrlcfg.ControllerManagerConfigurationSpec{
+			Health: ctrlcfg.ControllerHealth{
+				HealthProbeBindAddress: ":8081",
+			},
+			Metrics: ctrlcfg.ControllerMetrics{
+				BindAddress: ":8080",
+			},
+			LeaderElection: &configv1alpha1.LeaderElectionConfiguration{
+				LeaderElect:  pointer.Bool(false),
+				ResourceLock: resourcelock.LeasesResourceLock,
+			},
+		},
 		Service: config.ServiceConfigurationSpec{
 			APIExportName: "camel-kcp",
 		},
