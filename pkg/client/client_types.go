@@ -18,9 +18,12 @@ limitations under the License.
 package client
 
 import (
+	schedulingv1alpha1 "github.com/kcp-dev/kcp/pkg/client/clientset/versioned/typed/scheduling/v1alpha1"
+
 	"github.com/apache/camel-k/pkg/client"
 )
 
 type Client interface {
 	client.Client
+	KcpSchedulingV1alpha1() schedulingv1alpha1.SchedulingV1alpha1Interface
 }

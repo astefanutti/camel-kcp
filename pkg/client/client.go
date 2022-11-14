@@ -33,6 +33,9 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/kcp"
 
+	kcpclientset "github.com/kcp-dev/kcp/pkg/client/clientset/versioned"
+	schedulingv1alpha1 "github.com/kcp-dev/kcp/pkg/client/clientset/versioned/typed/scheduling/v1alpha1"
+
 	"github.com/apache/camel-k/pkg/client"
 	camel "github.com/apache/camel-k/pkg/client/camel/clientset/versioned"
 	camelv1 "github.com/apache/camel-k/pkg/client/camel/clientset/versioned/typed/camel/v1"
@@ -43,6 +46,7 @@ type kcpClient struct {
 	ctrl.Client
 	discovery discovery.DiscoveryInterface
 	kubernetes.Interface
+	kcp        kcpclientset.Interface
 	camel      camel.Interface
 	scheme     *runtime.Scheme
 	config     *rest.Config
@@ -62,6 +66,10 @@ func NewClient(cfg *rest.Config, scheme *runtime.Scheme, c ctrl.Client) (Client,
 	if err != nil {
 		return nil, err
 	}
+	kcpClientSet, err := kcpclientset.NewForConfigAndClient(cfg, httpClient)
+	if err != nil {
+		return nil, err
+	}
 	camelClientset, err := camel.NewForConfigAndClient(cfg, httpClient)
 	if err != nil {
 		return nil, err
@@ -75,6 +83,7 @@ func NewClient(cfg *rest.Config, scheme *runtime.Scheme, c ctrl.Client) (Client,
 		Client:     c,
 		discovery:  discoveryClient,
 		Interface:  clientset,
+		kcp:        kcpClientSet,
 		camel:      camelClientset,
 		scheme:     scheme,
 		config:     cfg,
@@ -86,6 +95,10 @@ var _ Client = &kcpClient{}
 
 func (c *kcpClient) Discovery() discovery.DiscoveryInterface {
 	return c.discovery
+}
+
+func (c *kcpClient) KcpSchedulingV1alpha1() schedulingv1alpha1.SchedulingV1alpha1Interface {
+	return c.kcp.SchedulingV1alpha1()
 }
 
 func (c *kcpClient) CamelV1() camelv1.CamelV1Interface {
