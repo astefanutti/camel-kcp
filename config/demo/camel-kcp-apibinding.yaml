@@ -28,8 +28,7 @@ spec:
   - group: ""
     resource: namespaces
     resourceSelector:
-    - namespace: ""
-      name: camel-k
+    - name: camel-k
     state: Accepted
   - group: ""
     resource: configmaps

@@ -32,8 +32,7 @@ spec:
   - group: ""
     resource: namespaces
     resourceSelector:
-    - namespace: ""
-      name: camel-k
+    - name: camel-k
   - group: ""
     resource: configmaps
     all: true
