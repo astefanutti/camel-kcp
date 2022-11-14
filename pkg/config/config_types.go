@@ -24,6 +24,8 @@ import (
 
 	cfg "sigs.k8s.io/controller-runtime/pkg/config/v1alpha1"
 
+	schedulingv1alpha1 "github.com/kcp-dev/kcp/pkg/apis/scheduling/v1alpha1"
+
 	v1 "github.com/apache/camel-k/pkg/apis/camel/v1"
 )
 
@@ -57,9 +59,19 @@ type OnAPIBinding struct {
 	// in the consumer workspace.
 	// +optional
 	DefaultPlatform *IntegrationPlatform `json:"createDefaultPlatform,omitempty"`
+
+	// The specification of the default placement, that's created
+	// when the service APIExport is bound, in the consumer workspace.
+	// +optional
+	DefaultPlacement *Placement `json:"createDefaultPlacement,omitempty"`
 }
 
 type IntegrationPlatform struct {
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 	Spec              v1.IntegrationPlatformSpec `json:"spec,omitempty"`
+}
+
+type Placement struct {
+	metav1.ObjectMeta `json:"metadata,omitempty"`
+	Spec              schedulingv1alpha1.PlacementSpec `json:"spec,omitempty"`
 }
