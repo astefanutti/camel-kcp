@@ -38,9 +38,9 @@ import (
 	apisv1alpha1 "github.com/kcp-dev/kcp/pkg/apis/apis/v1alpha1"
 
 	v1 "github.com/apache/camel-k/pkg/apis/camel/v1"
-	"github.com/apache/camel-k/pkg/client"
 	"github.com/apache/camel-k/pkg/util/monitoring"
 
+	"github.com/apache/camel-kcp/pkg/client"
 	"github.com/apache/camel-kcp/pkg/config"
 	"github.com/apache/camel-kcp/pkg/platform"
 )

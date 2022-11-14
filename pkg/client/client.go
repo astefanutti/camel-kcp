@@ -15,7 +15,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package main
+package client
 
 import (
 	"net/http"
@@ -49,7 +49,7 @@ type kcpClient struct {
 	restClient rest.Interface
 }
 
-func NewClient(cfg *rest.Config, scheme *runtime.Scheme, c ctrl.Client) (client.Client, error) {
+func NewClient(cfg *rest.Config, scheme *runtime.Scheme, c ctrl.Client) (Client, error) {
 	httpClient, err := kcp.ClusterAwareHTTPClient(cfg)
 	if err != nil {
 		return nil, err
@@ -82,7 +82,7 @@ func NewClient(cfg *rest.Config, scheme *runtime.Scheme, c ctrl.Client) (client.
 	}, nil
 }
 
-var _ client.Client = &kcpClient{}
+var _ Client = &kcpClient{}
 
 func (c *kcpClient) Discovery() discovery.DiscoveryInterface {
 	return c.discovery

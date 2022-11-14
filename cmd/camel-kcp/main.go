@@ -53,7 +53,7 @@ import (
 
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/cache"
-	"sigs.k8s.io/controller-runtime/pkg/client"
+	ctrlclient "sigs.k8s.io/controller-runtime/pkg/client"
 	ctrlcfg "sigs.k8s.io/controller-runtime/pkg/config/v1alpha1"
 	"sigs.k8s.io/controller-runtime/pkg/healthz"
 	"sigs.k8s.io/controller-runtime/pkg/kcp"
@@ -71,6 +71,7 @@ import (
 	"github.com/apache/camel-k/pkg/util/defaults"
 	logutil "github.com/apache/camel-k/pkg/util/log"
 
+	"github.com/apache/camel-kcp/pkg/client"
 	"github.com/apache/camel-kcp/pkg/config"
 	"github.com/apache/camel-kcp/pkg/controller/apibinding"
 	"github.com/apache/camel-kcp/pkg/platform"
@@ -223,7 +224,7 @@ func main() {
 	exitOnError(mgr.AddHealthzCheck("healthz", healthz.Ping), "Unable to add health check")
 	exitOnError(mgr.AddReadyzCheck("readyz", healthz.Ping), "Unable to add ready check")
 
-	c, err := NewClient(apiExportCfg, scheme, mgr.GetClient())
+	c, err := client.NewClient(apiExportCfg, scheme, mgr.GetClient())
 	exitOnError(err, "failed to create client")
 
 	exitOnError(controller.AddToManager(mgr, c), "")
@@ -250,7 +251,7 @@ func restConfigForAPIExport(ctx context.Context, cfg *rest.Config, apiExportName
 		return nil, fmt.Errorf("error adding apis.kcp.dev/v1alpha1 to scheme: %w", err)
 	}
 
-	apiExportClient, err := client.New(cfg, client.Options{Scheme: scheme})
+	apiExportClient, err := ctrlclient.New(cfg, ctrlclient.Options{Scheme: scheme})
 	if err != nil {
 		return nil, fmt.Errorf("error creating APIExport client: %w", err)
 	}
@@ -305,7 +306,7 @@ func kcpAPIsGroupPresent(discoveryClient discovery.DiscoveryInterface) bool {
 
 // getOperatorImage returns the image currently used by the running operator if present (when running out of cluster, it may be absent).
 // nolint: unused
-func getOperatorImage(ctx context.Context, c client.Reader) (string, error) {
+func getOperatorImage(ctx context.Context, c ctrlclient.Reader) (string, error) {
 	ns := platform.GetOperatorNamespace()
 	name := platform.GetOperatorPodName()
 	if ns == "" || name == "" {
@@ -313,7 +314,7 @@ func getOperatorImage(ctx context.Context, c client.Reader) (string, error) {
 	}
 
 	pod := corev1.Pod{}
-	if err := c.Get(ctx, client.ObjectKey{Namespace: ns, Name: name}, &pod); err != nil && apierrors.IsNotFound(err) {
+	if err := c.Get(ctx, ctrlclient.ObjectKey{Namespace: ns, Name: name}, &pod); err != nil && apierrors.IsNotFound(err) {
 		return "", nil
 	} else if err != nil {
 		return "", err
