@@ -88,7 +88,7 @@ var options struct {
 func init() {
 	flagSet := flag.CommandLine
 
-	flag.StringVar(&options.configFilePath, "config", "config.yaml",
+	flag.StringVar(&options.configFilePath, "config", "",
 		"The controller will load its initial configuration from this file. "+
 			"Omit this flag to use the default configuration values. "+
 			"Command-line flags override configuration from this file.")
@@ -180,8 +180,11 @@ func main() {
 			APIExportName: "camel-kcp",
 		},
 	}
-	_, err = mgrOptions.AndFrom(ctrl.ConfigFile().AtPath(options.configFilePath).OfKind(svcCfg))
-	exitOnError(err, "error loading controller configuration")
+
+	if options.configFilePath != "" {
+		mgrOptions, err = mgrOptions.AndFrom(ctrl.ConfigFile().AtPath(options.configFilePath).OfKind(svcCfg))
+		exitOnError(err, "error loading controller configuration")
+	}
 
 	// Environment
 	_, err = maxprocs.Set(maxprocs.Logger(func(f string, a ...interface{}) { logger.Info(fmt.Sprintf(f, a)) }))
