@@ -1,0 +1,11 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: camel-kcp
+spec:
+  template:
+    spec:
+      containers:
+      - name: manager
+        image: REGISTRY_ADDRESS/camel-kcp # {"$openapi":"registry-address"}
+        imagePullPolicy: Always

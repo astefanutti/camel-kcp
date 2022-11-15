@@ -33,3 +33,4 @@ configMapGenerator:
 
 patchesStrategicMerge:
   - config_patch.yaml
+  - image_patch.yaml
