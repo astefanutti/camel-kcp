@@ -43,7 +43,6 @@ spec:
       containers:
         - command:
             - /camel-kcp
-            - --api-export-name=camel-kcp
 #            - -v=6
 #            - -zap-devel
           image: controller:latest
