@@ -1,0 +1,14 @@
+apiVersion: controller-runtime.sigs.k8s.io/v1alpha1
+kind: ControllerManagerConfig
+service:
+  apiExportName: camel-kcp
+  onApiBinding:
+    createDefaultPlatform:
+      metadata:
+        namespace: camel-k
+        name: camel-k
+      spec:
+        build:
+          registry:
+            address: REGISTRY_ADDRESS # {"$openapi":"registry-address"}
+            insecure: true

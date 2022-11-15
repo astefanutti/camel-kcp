@@ -1,0 +1,19 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: camel-kcp
+spec:
+  template:
+    spec:
+      containers:
+        - name: manager
+          args:
+            - "--config=config.yaml"
+          volumeMounts:
+            - name: config
+              mountPath: /config.yaml
+              subPath: config.yaml
+      volumes:
+        - name: config
+          configMap:
+            name: config
