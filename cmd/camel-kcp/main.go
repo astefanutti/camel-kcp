@@ -228,12 +228,6 @@ func main() {
 	exitOnError(err, "failed to create client")
 
 	exitOnError(controller.AddToManager(mgr, c), "")
-
-	// FIXME: workspace initializer
-	// logger.Info("Installing operator resources")
-	// installCtx, installCancel := context.WithTimeout(ctx, 1*time.Minute)
-	// defer installCancel()
-	// install.OperatorStartupOptionalTools(installCtx, c, "", operatorNamespace, logger)
 	exitOnError(apibinding.Add(mgr, c, svcCfg), "")
 
 	logger.Info("Starting the manager")
