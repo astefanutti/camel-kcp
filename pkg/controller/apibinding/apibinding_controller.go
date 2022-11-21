@@ -36,6 +36,7 @@ import (
 	"github.com/kcp-dev/logicalcluster/v2"
 
 	apisv1alpha1 "github.com/kcp-dev/kcp/pkg/apis/apis/v1alpha1"
+	schedulingv1alpha1 "github.com/kcp-dev/kcp/pkg/apis/scheduling/v1alpha1"
 
 	v1 "github.com/apache/camel-k/pkg/apis/camel/v1"
 	"github.com/apache/camel-k/pkg/util/monitoring"
@@ -104,6 +105,12 @@ func (r *reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 		}
 	}
 
+	if placement := r.cfg.Service.OnAPIBinding.DefaultPlacement; placement != nil {
+		if err := r.maybeCreatePlacement(ctx, placement); err != nil {
+			return reconcile.Result{}, err
+		}
+	}
+
 	return reconcile.Result{}, nil
 }
 
@@ -125,18 +132,40 @@ func (r *reconciler) maybeCreateNamespace(ctx context.Context, name string) erro
 		},
 	}
 
+	// Use client-go non-caching client
 	_, err = r.client.CoreV1().Namespaces().Create(ctx, namespace, metav1.CreateOptions{})
 	return err
 }
 
-func (r *reconciler) maybeCreatePlatform(ctx context.Context, ip *config.IntegrationPlatform) error {
-	p := &v1.IntegrationPlatform{
-		ObjectMeta: ip.ObjectMeta,
-		Spec:       ip.Spec,
+func (r *reconciler) maybeCreatePlatform(ctx context.Context, platformConfig *config.IntegrationPlatform) error {
+	ip := &v1.IntegrationPlatform{
+		ObjectMeta: platformConfig.ObjectMeta,
+		Spec:       platformConfig.Spec,
 	}
 
-	if err := r.client.Get(ctx, ctrl.ObjectKeyFromObject(p), p); errors.IsNotFound(err) {
-		return r.client.Create(ctx, p)
+	// Use the controller-runtime caching client
+	if err := r.client.Get(ctx, ctrl.ObjectKeyFromObject(ip), ip); errors.IsNotFound(err) {
+		return r.client.Create(ctx, ip)
+	} else if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// +kubebuilder:rbac:groups="scheduling.kcp.dev",resources=placements,verbs=get;create
+
+func (r *reconciler) maybeCreatePlacement(ctx context.Context, placementConfig *config.Placement) error {
+	placement := &schedulingv1alpha1.Placement{
+		ObjectMeta: placementConfig.ObjectMeta,
+		Spec:       placementConfig.Spec,
+	}
+
+	// Use client-go non-caching client
+	if _, err := r.client.KcpSchedulingV1alpha1().Placements().Get(ctx, placement.Name, metav1.GetOptions{}); errors.IsNotFound(err) {
+		if _, err := r.client.KcpSchedulingV1alpha1().Placements().Create(ctx, placement, metav1.CreateOptions{}); err != nil {
+			return err
+		}
 	} else if err != nil {
 		return err
 	}
