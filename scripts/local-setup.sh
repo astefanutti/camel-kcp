@@ -281,7 +281,6 @@ ${KUSTOMIZE_BIN} cfg set config/demo scheduling-identity-hash "$schedulingIdenti
 ${KUSTOMIZE_BIN} cfg set config/demo kubernetes-identity-hash "$kubernetesIdentityHash"
 ${KUSTOMIZE_BIN} build config/demo | kubectl apply --server-side -f -
 
-# It seems there is a race in kcp that prevents the local registry ConfigMap to be processed by the permission claim label controller, while the binding is being processed.
 kubectl wait --timeout=300s --for=condition=Ready=true apibinding camel-kcp
 
 # Switch back to control workspace
