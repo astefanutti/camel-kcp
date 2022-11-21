@@ -216,24 +216,6 @@ createSyncTarget $KCP_CONTROL_CLUSTER_NAME 8081 8444 "$registry_addr:$registry_p
 kubectl label --overwrite synctarget "control" "org.apache.camel/control-plane="
 kubectl wait --timeout=300s --for=condition=Ready=true synctargets "control"
 
-# Update default placement to match control plane location(s)
-cat <<EOF | kubectl apply -f -
-apiVersion: scheduling.kcp.dev/v1alpha1
-kind: Placement
-metadata:
-  name: default
-spec:
-  locationResource:
-    group: workload.kcp.dev
-    resource: synctargets
-    version: v1alpha1
-  namespaceSelector: {}
-  locationSelectors:
-  - matchExpressions:
-    - key: org.apache.camel/control-plane
-      operator: Exists
-EOF
-
 # Create data plane sync targets and wait for them to be ready
 echo "Creating $NUM_CLUSTERS kcp SyncTarget cluster(s)"
 
