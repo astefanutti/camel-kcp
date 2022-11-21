@@ -42,12 +42,12 @@ spec:
     resource: services
     all: true
     state: Accepted
-    identityHash: IDENTITY_HASH # {"$openapi":"identity-hash"}
+    identityHash: IDENTITY_HASH # {"$openapi":"kubernetes-identity-hash"}
   - group: apps
     resource: deployments
     all: true
     state: Accepted
-    identityHash: IDENTITY_HASH # {"$openapi":"identity-hash"}
+    identityHash: IDENTITY_HASH # {"$openapi":"kubernetes-identity-hash"}
   - group: coordination.k8s.io
     resource: leases
     all: true
@@ -56,4 +56,10 @@ spec:
     resource: ingresses
     all: true
     state: Accepted
-    identityHash: IDENTITY_HASH # {"$openapi":"identity-hash"}
+    identityHash: IDENTITY_HASH # {"$openapi":"kubernetes-identity-hash"}
+  - group: scheduling.kcp.dev
+    resource: placements
+    resourceSelector:
+    - name: default
+    state: Accepted
+    identityHash: IDENTITY_HASH # {"$openapi":"scheduling-identity-hash"}

@@ -2,11 +2,19 @@ apiVersion: config.k8s.io/v1alpha1
 kind: Krmfile
 openAPI:
   definitions:
-    io.k8s.cli.setters.identity-hash:
+    io.k8s.cli.setters.kubernetes-identity-hash:
       type: string
       description: Identity hash of the Kubernetes APIExport
       x-k8s-cli:
         setter:
-          name: identity-hash
+          name: kubernetes-identity-hash
+          value: IDENTITY_HASH
+          required: true
+    io.k8s.cli.setters.scheduling-identity-hash:
+      type: string
+      description: Identity hash of the scheduling APIExport
+      x-k8s-cli:
+        setter:
+          name: scheduling-identity-hash
           value: IDENTITY_HASH
           required: true
