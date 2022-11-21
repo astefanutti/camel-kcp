@@ -15,23 +15,12 @@
 # limitations under the License.
 # ---------------------------------------------------------------------------
 
-namespace: camel-kcp
-
-commonLabels:
-  app.kubernetes.io/name: camel-k
-
-resources:
-  - ../../default
-  - kubernetes_apibinding.yaml
-
-generatorOptions:
-  disableNameSuffixHash: true
-
-configMapGenerator:
-  - name: config
-    files:
-      - config.yaml
-
-patchesStrategicMerge:
-  - config_patch.yaml
-  - image_patch.yaml
+apiVersion: apis.kcp.dev/v1alpha1
+kind: APIBinding
+metadata:
+  name: kubernetes
+spec:
+  reference:
+    workspace:
+      path: root:compute
+      exportName: kubernetes
