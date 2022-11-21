@@ -15,24 +15,17 @@
 # limitations under the License.
 # ---------------------------------------------------------------------------
 
-namespace: camel-kcp
-
-commonLabels:
-  app.kubernetes.io/name: camel-k
-
-resources:
-  - ../../default
-  - kubernetes_apibinding.yaml
-  - default_placement.yaml
-
-generatorOptions:
-  disableNameSuffixHash: true
-
-configMapGenerator:
-  - name: config
-    files:
-      - config.yaml
-
-patchesStrategicMerge:
-  - config_patch.yaml
-  - image_patch.yaml
+apiVersion: scheduling.kcp.dev/v1alpha1
+kind: Placement
+metadata:
+  name: default
+spec:
+  locationResource:
+    group: workload.kcp.dev
+    resource: synctargets
+    version: v1alpha1
+  namespaceSelector: { }
+  locationSelectors:
+    - matchExpressions:
+        - key: org.apache.camel/control-plane
+          operator: Exists
