@@ -170,6 +170,10 @@ ${KUBECTL_KCP_BIN} workspace create "camel-k" --type universal --enter || ${KUBE
 ${KUBECTL_KCP_BIN} workspace use "${ORG_WORKSPACE}"
 ${KUBECTL_KCP_BIN} workspace create "camel-kcp" --enter || ${KUBECTL_KCP_BIN} workspace use "camel-kcp"
 
+# Bind root compute APIExport
+${KUBECTL_KCP_BIN} bind apiexport root:compute:kubernetes --name kubernetes
+kubectl wait --timeout=300s --for=condition=Ready=true apibinding kubernetes
+
 # Create control and data plane locations
 cat <<EOF | kubectl apply -f -
 apiVersion: scheduling.kcp.dev/v1alpha1

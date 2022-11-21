@@ -22,7 +22,6 @@ commonLabels:
 
 resources:
   - ../../default
-  - kubernetes_apibinding.yaml
   - default_placement.yaml
 
 generatorOptions:
