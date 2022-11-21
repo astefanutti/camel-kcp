@@ -10,3 +10,11 @@ openAPI:
           name: registry-address
           value: REGISTRY_ADDRESS
           required: true
+    io.k8s.cli.substitutions.image:
+      x-k8s-cli:
+        substitution:
+          name: image
+          pattern: REGISTRY_ADDRESS/camel-kcp
+          values:
+          - marker: "REGISTRY_ADDRESS"
+            ref: "#/definitions/io.k8s.cli.setters.registry-address"
