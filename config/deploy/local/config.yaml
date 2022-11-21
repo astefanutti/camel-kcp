@@ -12,3 +12,17 @@ service:
           registry:
             address: REGISTRY_ADDRESS # {"$openapi":"registry-address"}
             insecure: true
+    createDefaultPlacement:
+      metadata:
+        name: default
+      spec:
+        locationWorkspace: root:camel-k:camel-kcp
+        locationResource:
+          group: workload.kcp.dev
+          resource: synctargets
+          version: v1alpha1
+        namespaceSelector: {}
+        locationSelectors:
+        - matchExpressions:
+          - key: org.apache.camel/data-plane
+            operator: Exists
