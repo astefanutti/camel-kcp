@@ -16,9 +16,10 @@
 KCP_BRANCH := main
 NUM_CLUSTERS := 2
 
-IMAGE_TAG_BASE ?= ghcr.io/astefanutti/camel-kcp
+IMAGE_NAME ?= camel-kcp
+IMAGE_REGISTRY ?= ghcr.io/astefanutti
 IMAGE_TAG ?= latest
-IMG ?= $(IMAGE_TAG_BASE):$(IMAGE_TAG)
+IMG ?= $(IMAGE_REGISTRY)/$(IMAGE_NAME):$(IMAGE_TAG)
 
 KUBECONFIG ?= $(shell pwd)/.kcp/admin.kubeconfig
 CLUSTERS_KUBECONFIG_DIR ?= $(shell pwd)/tmp
@@ -107,6 +108,18 @@ uninstall: kcp kustomize ## Uninstall APIResourceSchemas and APIExport from kcp 
 deploy: kustomize ## Deploy controller to the K8s cluster (using $KUBECONFIG or ~/.kube/config)
 	cd config/manager && $(KUSTOMIZE) edit set image controller=${IMG}
 	$(KUSTOMIZE) build config/default | kubectl apply -f -
+
+.PHONY: local-deploy
+local-deploy: kustomize build-image ## Deploy controller to the local K8s cluster (using the local-setup.sh script)
+ifeq ($(shell uname -s 2>/dev/null || echo Unknown),Darwin)
+	$(eval registry_addr:=$(shell ipconfig getifaddr en0))
+else
+	$(eval registry_addr:=$(shell ip addr | grep 'state UP' -A2 | tail -n1 | awk '{print $2}' | cut -f1 -d'/'))
+endif
+	docker tag ${IMG} $(registry_addr):5001/$(IMAGE_NAME)
+	docker push $(registry_addr):5001/$(IMAGE_NAME)
+	$(KUSTOMIZE) cfg set config/deploy/local registry-address $(registry_addr):5001
+	$(KUSTOMIZE) build config/deploy/local | kubectl apply -f -
 
 .PHONY: undeploy
 undeploy: kustomize ## Undeploy controller from the K8s cluster (using $KUBECONFIG or ~/.kube/config)
