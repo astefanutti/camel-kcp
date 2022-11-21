@@ -155,9 +155,13 @@ echo "Waiting for kcp server to be ready..."
 wait_for "grep 'Bootstrapped ClusterWorkspaceShard root|root' ${KCP_LOG_FILE}" "kcp" "1m" "5"
 sleep 5
 
+# Get root scheduling APIExport identity hash
+${KUBECTL_KCP_BIN} workspace use "root"
+schedulingIdentityHash=$(kubectl get apiexport scheduling.kcp.dev -o json | jq -r .status.identityHash)
+
 # Get root compute APIExport identity hash
 ${KUBECTL_KCP_BIN} workspace use "root:compute"
-identityHash=$(kubectl get apiexport kubernetes -o json | jq -r .status.identityHash)
+kubernetesIdentityHash=$(kubectl get apiexport kubernetes -o json | jq -r .status.identityHash)
 
 ${KUBECTL_KCP_BIN} workspace use "root"
 ${KUBECTL_KCP_BIN} workspace create "camel-k" --type universal --enter || ${KUBECTL_KCP_BIN} workspace use "camel-k"
@@ -278,7 +282,8 @@ done
 kubectl wait --timeout=300s --for=condition=Ready=true synctargets ${CLUSTERS}
 
 # Install APIExport
-${KUSTOMIZE_BIN} cfg set config/kcp identity-hash "$identityHash"
+${KUSTOMIZE_BIN} cfg set config/kcp scheduling-identity-hash "$schedulingIdentityHash"
+${KUSTOMIZE_BIN} cfg set config/kcp kubernetes-identity-hash "$kubernetesIdentityHash"
 ${KUSTOMIZE_BIN} build config/kcp | kubectl apply --server-side -f -
 
 # Switch to data workspace
@@ -286,7 +291,8 @@ ${KUBECTL_KCP_BIN} workspace use "${ORG_WORKSPACE}"
 ${KUBECTL_KCP_BIN} workspace create "demo" --enter || ${KUBECTL_KCP_BIN} workspace use "demo"
 
 # Install APIBinding(s)
-${KUSTOMIZE_BIN} cfg set config/demo identity-hash "$identityHash"
+${KUSTOMIZE_BIN} cfg set config/demo scheduling-identity-hash "$schedulingIdentityHash"
+${KUSTOMIZE_BIN} cfg set config/demo kubernetes-identity-hash "$kubernetesIdentityHash"
 ${KUSTOMIZE_BIN} build config/demo | kubectl apply --server-side -f -
 
 # It seems there is a race in kcp that prevents the local registry ConfigMap to be processed by the permission claim label controller, while the binding is being processed.
