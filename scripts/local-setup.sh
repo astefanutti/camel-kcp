@@ -298,25 +298,6 @@ ${KUSTOMIZE_BIN} build config/demo | kubectl apply --server-side -f -
 # It seems there is a race in kcp that prevents the local registry ConfigMap to be processed by the permission claim label controller, while the binding is being processed.
 kubectl wait --timeout=300s --for=condition=Ready=true apibinding camel-kcp
 
-# Update default placement to match data plane location(s)
-cat <<EOF | kubectl apply -f -
-apiVersion: scheduling.kcp.dev/v1alpha1
-kind: Placement
-metadata:
-  name: default
-spec:
-  locationWorkspace: root:camel-k:camel-kcp
-  locationResource:
-    group: workload.kcp.dev
-    resource: synctargets
-    version: v1alpha1
-  namespaceSelector: {}
-  locationSelectors:
-  - matchExpressions:
-    - key: org.apache.camel/data-plane
-      operator: Exists
-EOF
-
 # Switch back to control workspace
 ${KUBECTL_KCP_BIN} workspace use "${ORG_WORKSPACE}:camel-kcp"
 
