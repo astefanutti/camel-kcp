@@ -155,8 +155,12 @@ echo "Waiting for kcp server to be ready..."
 wait_for "grep 'Bootstrapped ClusterWorkspaceShard root|root' ${KCP_LOG_FILE}" "kcp" "1m" "5"
 sleep 5
 
-# Get root scheduling APIExport identity hash
 ${KUBECTL_KCP_BIN} workspace use "root"
+
+# Install Camel K cluster workspace type
+${KUSTOMIZE_BIN} build config/kcp/workspace | kubectl apply --server-side -f -
+
+# Get root scheduling APIExport identity hash
 schedulingIdentityHash=$(kubectl get apiexport scheduling.kcp.dev -o json | jq -r .status.identityHash)
 
 # Get root compute APIExport identity hash
