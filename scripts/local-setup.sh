@@ -276,16 +276,9 @@ ${KUSTOMIZE_BIN} cfg set config/kcp scheduling-identity-hash "$schedulingIdentit
 ${KUSTOMIZE_BIN} cfg set config/kcp kubernetes-identity-hash "$kubernetesIdentityHash"
 ${KUSTOMIZE_BIN} build config/kcp | kubectl apply --server-side -f -
 
-# Switch to data workspace
+# Switch to user workspace
 ${KUBECTL_KCP_BIN} workspace use "${ORG_WORKSPACE}"
-${KUBECTL_KCP_BIN} workspace create "demo" --enter || ${KUBECTL_KCP_BIN} workspace use "demo"
-
-# Install APIBinding(s)
-${KUSTOMIZE_BIN} cfg set config/demo scheduling-identity-hash "$schedulingIdentityHash"
-${KUSTOMIZE_BIN} cfg set config/demo kubernetes-identity-hash "$kubernetesIdentityHash"
-${KUSTOMIZE_BIN} build config/demo | kubectl apply --server-side -f -
-
-kubectl wait --timeout=300s --for=condition=Ready=true apibinding camel-kcp
+${KUBECTL_KCP_BIN} workspace create "demo" --type camel-k --enter || ${KUBECTL_KCP_BIN} workspace use "demo"
 
 # Switch back to control workspace
 ${KUBECTL_KCP_BIN} workspace use "${ORG_WORKSPACE}:camel-kcp"
