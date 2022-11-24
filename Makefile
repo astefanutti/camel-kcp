@@ -14,7 +14,7 @@
 # limitations under the License.
 
 KCP_BRANCH := main
-NUM_CLUSTERS := 2
+NUM_CLUSTERS := 1
 
 IMAGE_NAME ?= camel-kcp
 IMAGE_REGISTRY ?= ghcr.io/astefanutti
