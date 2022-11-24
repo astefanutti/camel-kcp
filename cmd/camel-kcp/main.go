@@ -35,10 +35,10 @@ import (
 	batchv1 "k8s.io/api/batch/v1"
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/apimachinery/pkg/fields"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/selection"
-	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/discovery"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/tools/record"
@@ -245,41 +245,40 @@ func restConfigForAPIExport(ctx context.Context, cfg *rest.Config, apiExportName
 		return nil, fmt.Errorf("error adding apis.kcp.dev/v1alpha1 to scheme: %w", err)
 	}
 
-	apiExportClient, err := ctrlclient.New(cfg, ctrlclient.Options{Scheme: scheme})
+	apiExportClient, err := ctrlclient.NewWithWatch(cfg, ctrlclient.Options{Scheme: scheme})
 	if err != nil {
 		return nil, fmt.Errorf("error creating APIExport client: %w", err)
 	}
 
-	var apiExport apisv1alpha1.APIExport
-
+	var opts []ctrlclient.ListOption
 	if apiExportName != "" {
-		if err := apiExportClient.Get(ctx, types.NamespacedName{Name: apiExportName}, &apiExport); err != nil {
-			return nil, fmt.Errorf("error getting APIExport %q: %w", apiExportName, err)
-		}
-	} else {
-		logger.Info("api-export-name is empty - listing")
-		exports := &apisv1alpha1.APIExportList{}
-		if err := apiExportClient.List(ctx, exports); err != nil {
-			return nil, fmt.Errorf("error listing APIExports: %w", err)
-		}
-		if len(exports.Items) == 0 {
-			return nil, fmt.Errorf("no APIExport found")
-		}
-		if len(exports.Items) > 1 {
-			return nil, fmt.Errorf("more than one APIExport found")
-		}
-		apiExport = exports.Items[0]
+		opts = append(opts, ctrlclient.MatchingFieldsSelector{
+			Selector: fields.OneTermEqualSelector("metadata.name", apiExportName),
+		})
 	}
 
-	if len(apiExport.Status.VirtualWorkspaces) < 1 {
-		return nil, fmt.Errorf("APIExport %q status.virtualWorkspaces is empty", apiExportName)
+	watch, err := apiExportClient.Watch(ctx, &apisv1alpha1.APIExportList{}, opts...)
+
+	for {
+		select {
+		case <-ctx.Done():
+			return nil, ctx.Err()
+		case e := <-watch.ResultChan():
+			apiExport, ok := e.Object.(*apisv1alpha1.APIExport)
+			if !ok {
+				continue
+			}
+			logger.Debug("APIExport event received", "name", apiExport.Name, "event", e.Type)
+			if len(apiExport.Status.VirtualWorkspaces) == 0 {
+				logger.Info("APIExport does not have any virtual workspace URLs", "APIExport", apiExport.Name)
+				continue
+			}
+			cfg = rest.CopyConfig(cfg)
+			// TODO: sharding support
+			cfg.Host = apiExport.Status.VirtualWorkspaces[0].URL
+			return cfg, nil
+		}
 	}
-
-	cfg = rest.CopyConfig(cfg)
-	// TODO: sharding support
-	cfg.Host = apiExport.Status.VirtualWorkspaces[0].URL
-
-	return cfg, nil
 }
 
 func kcpAPIsGroupPresent(discoveryClient discovery.DiscoveryInterface) bool {
