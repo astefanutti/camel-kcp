@@ -141,7 +141,7 @@ fi
 
 # Start kcp
 echo "Starting kcp, writing logs to ${KCP_LOG_FILE}"
-${KCP_BIN} --v=9 start --feature-gates=KCPSyncerTunnel=true > ${KCP_LOG_FILE} 2>&1 &
+${KCP_BIN} --v=9 start --batteries-included=+user --feature-gates=KCPSyncerTunnel=true > ${KCP_LOG_FILE} 2>&1 &
 KCP_PID=$!
 
 if ! ps -p ${KCP_PID}; then
