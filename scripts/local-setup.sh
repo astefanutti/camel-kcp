@@ -276,13 +276,6 @@ ${KUSTOMIZE_BIN} cfg set config/kcp scheduling-identity-hash "$schedulingIdentit
 ${KUSTOMIZE_BIN} cfg set config/kcp kubernetes-identity-hash "$kubernetesIdentityHash"
 ${KUSTOMIZE_BIN} build config/kcp | kubectl apply --server-side -f -
 
-# Switch to user workspace
-${KUBECTL_KCP_BIN} workspace use "${ORG_WORKSPACE}"
-${KUBECTL_KCP_BIN} workspace create "demo" --type camel-k --enter || ${KUBECTL_KCP_BIN} workspace use "demo"
-
-# Switch back to control workspace
-${KUBECTL_KCP_BIN} workspace use "${ORG_WORKSPACE}:camel-kcp"
-
 echo ""
 echo "KCP PID          : ${KCP_PID}"
 echo ""
