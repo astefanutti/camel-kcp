@@ -258,6 +258,9 @@ func restConfigForAPIExport(ctx context.Context, cfg *rest.Config, apiExportName
 	}
 
 	watch, err := apiExportClient.Watch(ctx, &apisv1alpha1.APIExportList{}, opts...)
+	if err != nil {
+		return nil, fmt.Errorf("error watching for APIExport: %w", err)
+	}
 
 	for {
 		select {
