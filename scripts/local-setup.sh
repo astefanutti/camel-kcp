@@ -163,9 +163,41 @@ ${KUSTOMIZE_BIN} build config/kcp/workspace_type | kubectl apply --server-side -
 # Get root scheduling APIExport identity hash
 schedulingIdentityHash=$(kubectl get apiexport scheduling.kcp.dev -o json | jq -r .status.identityHash)
 
-# Get root compute APIExport identity hash
 ${KUBECTL_KCP_BIN} workspace use "root:compute"
+
+# Get root compute APIExport identity hash
 kubernetesIdentityHash=$(kubectl get apiexport kubernetes -o json | jq -r .status.identityHash)
+
+# Grant authenticated users permission to bind the root compute APIExport
+cat <<EOF | kubectl apply -f -
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: system:kcp:apiexport:kubernetes:bind
+rules:
+  - apiGroups:
+      - apis.kcp.dev
+    resources:
+      - apiexports
+    resourceNames:
+      - kubernetes
+    verbs:
+      - bind
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: system:kcp:authenticated:apiexport:kubernetes:bind
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: system:kcp:apiexport:kubernetes:bind
+subjects:
+  - apiGroup: rbac.authorization.k8s.io
+    kind: Group
+    name: system:authenticated
+EOF
 
 ${KUBECTL_KCP_BIN} workspace use "root"
 ${KUBECTL_KCP_BIN} workspace create "camel-k" --type universal --enter || ${KUBECTL_KCP_BIN} workspace use "camel-k"
