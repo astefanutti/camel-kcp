@@ -15,11 +15,15 @@
 # limitations under the License.
 # ---------------------------------------------------------------------------
 
-resources:
-- today.apiresourceschemas.yaml
-- apiexport.yaml
-- cluster_role.yaml
-- cluster_role_binding.yaml
-
-configurations:
-- kustomizeconfig.yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: camel-kcp-export
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: camel-kcp-export
+subjects:
+  - apiGroup: rbac.authorization.k8s.io
+    kind: Group
+    name: system:authenticated
