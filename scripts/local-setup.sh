@@ -304,8 +304,9 @@ done
 kubectl wait --timeout=300s --for=condition=Ready=true synctargets ${CLUSTERS}
 
 # Install APIExport
-${KUSTOMIZE_BIN} cfg set config/kcp scheduling-identity-hash "$schedulingIdentityHash"
-${KUSTOMIZE_BIN} cfg set config/kcp kubernetes-identity-hash "$kubernetesIdentityHash"
+${KUSTOMIZE_BIN} fn run config/kcp --image gcr.io/kpt-fn/apply-setters:v0.2.0 -- \
+kubernetes-identity-hash="$kubernetesIdentityHash" \
+scheduling-identity-hash="$schedulingIdentityHash"
 ${KUSTOMIZE_BIN} build config/kcp | kubectl apply --server-side -f -
 
 echo ""
