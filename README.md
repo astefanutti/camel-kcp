@@ -28,7 +28,7 @@ $ make local-setup
 Once kcp setup, you can run camel-kcp locally, by running the following command in another terminal:
 
 ```console
-$ KUBECONFIG=.kcp/admin.kubeconfig ./bin/camel-kcp --config=./config/deploy/local/config.yaml"
+$ KUBECONFIG=.kcp/admin.kubeconfig ./bin/camel-kcp --config=./config/deploy/local/config.yaml
 ```
 
 ### Deploy
