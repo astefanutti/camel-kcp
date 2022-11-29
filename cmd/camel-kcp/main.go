@@ -149,7 +149,6 @@ func main() {
 
 	// FIXME: cluster-aware event sink
 	broadcaster := record.NewBroadcaster()
-	defer broadcaster.Shutdown()
 	broadcaster = event.NewSinkLessBroadcaster(broadcaster)
 
 	// FIXME: enable leader election
