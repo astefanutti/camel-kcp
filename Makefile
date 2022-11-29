@@ -118,7 +118,7 @@ else
 endif
 	docker tag ${IMG} $(registry_addr):5001/$(IMAGE_NAME)
 	docker push $(registry_addr):5001/$(IMAGE_NAME)
-	$(KUSTOMIZE) cfg set config/deploy/local registry-address $(registry_addr):5001
+	$(KUSTOMIZE) fn run config/deploy/local --image gcr.io/kpt-fn/apply-setters:v0.2.0 -- registry-address=$(registry_addr):5001
 	$(KUSTOMIZE) build config/deploy/local | kubectl apply -f -
 
 .PHONY: undeploy
