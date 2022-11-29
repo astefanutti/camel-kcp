@@ -79,7 +79,7 @@ spec:
         uri: platform-http:/hello
         steps:
           - transform:
-              simple: Hello ${header.name} \n\n ${headers}
+              simple: Hello \${header.name}
           - to: log:info
   traits:
     health:
