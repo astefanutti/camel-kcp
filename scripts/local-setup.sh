@@ -252,15 +252,15 @@ echo "Creating kcp SyncTarget control cluster"
 
 emptyPatch=()
 
-createSyncTarget $KCP_CONTROL_CLUSTER_NAME 8081 8444 "$registry_addr:$registry_port" "control" "" emptyPatch
+createSyncTarget $KCP_CONTROL_CLUSTER_NAME 9080 9443 "$registry_addr:$registry_port" "control" "" emptyPatch
 kubectl label --overwrite synctarget "control" "org.apache.camel/control-plane="
 kubectl wait --timeout=300s --for=condition=Ready=true synctargets "control"
 
 # Create data plane sync targets and wait for them to be ready
 echo "Creating $NUM_CLUSTERS kcp SyncTarget cluster(s)"
 
-port80=8082
-port443=8445
+port80=9081
+port443=9444
 patchSyncerClusterRole=(--group rbac.authorization.k8s.io --kind ClusterRole name kcp-syncer-.* --patch "$(cat << 'EOF'
 - op: add
   path: /rules/-
