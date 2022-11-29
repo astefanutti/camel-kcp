@@ -25,6 +25,7 @@ import (
 	"math/rand"
 	"os"
 	goruntime "runtime"
+	"strings"
 	"time"
 
 	"go.uber.org/automaxprocs/maxprocs"
@@ -61,6 +62,7 @@ import (
 	ctrlzap "sigs.k8s.io/controller-runtime/pkg/log/zap"
 
 	apisv1alpha1 "github.com/kcp-dev/kcp/pkg/apis/apis/v1alpha1"
+	"github.com/kcp-dev/kcp/pkg/apis/third_party/conditions/util/conditions"
 
 	servingv1 "knative.dev/serving/pkg/apis/serving/v1"
 
@@ -271,10 +273,23 @@ func restConfigForAPIExport(ctx context.Context, cfg *rest.Config, apiExportName
 				continue
 			}
 			logger.Debug("APIExport event received", "name", apiExport.Name, "event", e.Type)
+
+			if resources := apiExport.Spec.LatestResourceSchemas; len(resources) == 0 ||
+				!strings.HasSuffix(resources[0], v1.SchemeGroupVersion.Group) {
+				// This is not this controller APIExport
+				continue
+			}
+
+			if !conditions.IsTrue(apiExport, apisv1alpha1.APIExportVirtualWorkspaceURLsReady) {
+				logger.Info("APIExport virtual workspace URLs are not ready", "APIExport", apiExport.Name)
+				continue
+			}
+
 			if len(apiExport.Status.VirtualWorkspaces) == 0 {
 				logger.Info("APIExport does not have any virtual workspace URLs", "APIExport", apiExport.Name)
 				continue
 			}
+
 			cfg = rest.CopyConfig(cfg)
 			// TODO: sharding support
 			cfg.Host = apiExport.Status.VirtualWorkspaces[0].URL
