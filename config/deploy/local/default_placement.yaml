@@ -14,7 +14,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ---------------------------------------------------------------------------
-
 apiVersion: scheduling.kcp.dev/v1alpha1
 kind: Placement
 metadata:
@@ -24,8 +23,8 @@ spec:
     group: workload.kcp.dev
     resource: synctargets
     version: v1alpha1
-  namespaceSelector: { }
+  namespaceSelector: {}
   locationSelectors:
-    - matchExpressions:
-        - key: org.apache.camel/control-plane
-          operator: Exists
+  - matchExpressions:
+    - key: org.apache.camel/control-plane
+      operator: Exists

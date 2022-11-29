@@ -14,24 +14,18 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ---------------------------------------------------------------------------
-
 namespace: camel-kcp
-
 commonLabels:
   app.kubernetes.io/name: camel-k
-
 resources:
-  - ../../default
-  - default_placement.yaml
-
+- ../../default
+- default_placement.yaml
 generatorOptions:
   disableNameSuffixHash: true
-
 configMapGenerator:
-  - name: config
-    files:
-      - config.yaml
-
+- name: config
+  files:
+  - config.yaml
 patchesStrategicMerge:
-  - config_patch.yaml
-  - image_patch.yaml
+- config_patch.yaml
+- image_patch.yaml
