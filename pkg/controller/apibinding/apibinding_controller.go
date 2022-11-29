@@ -97,10 +97,18 @@ func (r *reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 		}
 
 		if err := r.maybeCreateNamespace(ctx, ip.Namespace); err != nil {
+			if errors.IsNotFound(err) {
+				rlog.Debug("Bound APIs are not yet found")
+				return reconcile.Result{Requeue: true}, nil
+			}
 			return reconcile.Result{}, err
 		}
 
 		if err := r.maybeCreatePlatform(ctx, ip); err != nil {
+			if errors.IsNotFound(err) {
+				rlog.Debug("Bound APIs are not yet found")
+				return reconcile.Result{Requeue: true}, nil
+			}
 			return reconcile.Result{}, err
 		}
 	}
