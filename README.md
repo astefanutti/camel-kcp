@@ -84,6 +84,7 @@ spec:
   traits:
     health:
       enabled: true
+EOF
 ```
 
 Alternatively, you can using the `run` command of the Camel K CLI.
