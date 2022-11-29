@@ -7,5 +7,5 @@ spec:
     spec:
       containers:
       - name: manager
-        image: REGISTRY_ADDRESS/camel-kcp # {"$ref": "#/definitions/io.k8s.cli.substitutions.image"}
+        image: REGISTRY_ADDRESS/camel-kcp # kpt-set: ${registry-address}/camel-kcp
         imagePullPolicy: Always

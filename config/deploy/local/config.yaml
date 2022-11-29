@@ -10,7 +10,7 @@ service:
       spec:
         build:
           registry:
-            address: REGISTRY_ADDRESS # {"$openapi":"registry-address"}
+            address: REGISTRY_ADDRESS # kpt-set: ${registry-address}
             insecure: true
     createDefaultPlacement:
       metadata:
