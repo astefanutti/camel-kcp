@@ -87,4 +87,4 @@ spec:
 EOF
 ```
 
-Alternatively, you can using the `run` command of the Camel K CLI.
+Alternatively, you can use the `run` command of the Camel K CLI.
