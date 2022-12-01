@@ -25,7 +25,6 @@ import (
 	"math/rand"
 	"os"
 	goruntime "runtime"
-	"strings"
 	"time"
 
 	"go.uber.org/automaxprocs/maxprocs"
@@ -251,14 +250,9 @@ func restConfigForAPIExport(ctx context.Context, cfg *rest.Config, apiExportName
 		return nil, fmt.Errorf("error creating APIExport client: %w", err)
 	}
 
-	var opts []ctrlclient.ListOption
-	if apiExportName != "" {
-		opts = append(opts, ctrlclient.MatchingFieldsSelector{
-			Selector: fields.OneTermEqualSelector("metadata.name", apiExportName),
-		})
-	}
-
-	watch, err := apiExportClient.Watch(ctx, &apisv1alpha1.APIExportList{}, opts...)
+	watch, err := apiExportClient.Watch(ctx, &apisv1alpha1.APIExportList{}, ctrlclient.MatchingFieldsSelector{
+		Selector: fields.OneTermEqualSelector("metadata.name", apiExportName),
+	})
 	if err != nil {
 		return nil, fmt.Errorf("error watching for APIExport: %w", err)
 	}
@@ -272,13 +266,8 @@ func restConfigForAPIExport(ctx context.Context, cfg *rest.Config, apiExportName
 			if !ok {
 				continue
 			}
-			logger.Debug("APIExport event received", "name", apiExport.Name, "event", e.Type)
 
-			if resources := apiExport.Spec.LatestResourceSchemas; len(resources) == 0 ||
-				!strings.HasSuffix(resources[0], v1.SchemeGroupVersion.Group) {
-				// This is not this controller APIExport
-				continue
-			}
+			logger.Debug("APIExport event received", "name", apiExport.Name, "event", e.Type)
 
 			if !conditions.IsTrue(apiExport, apisv1alpha1.APIExportVirtualWorkspaceURLsReady) {
 				logger.Info("APIExport virtual workspace URLs are not ready", "APIExport", apiExport.Name)
