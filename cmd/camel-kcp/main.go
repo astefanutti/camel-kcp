@@ -250,9 +250,10 @@ func restConfigForAPIExport(ctx context.Context, cfg *rest.Config, apiExportName
 		return nil, fmt.Errorf("error creating APIExport client: %w", err)
 	}
 
-	watch, err := apiExportClient.Watch(ctx, &apisv1alpha1.APIExportList{}, ctrlclient.MatchingFieldsSelector{
+	selector := ctrlclient.MatchingFieldsSelector{
 		Selector: fields.OneTermEqualSelector("metadata.name", apiExportName),
-	})
+	}
+	watch, err := apiExportClient.Watch(ctx, &apisv1alpha1.APIExportList{}, selector)
 	if err != nil {
 		return nil, fmt.Errorf("error watching for APIExport: %w", err)
 	}
@@ -262,7 +263,16 @@ func restConfigForAPIExport(ctx context.Context, cfg *rest.Config, apiExportName
 		case <-ctx.Done():
 			watch.Stop()
 			return nil, ctx.Err()
-		case e := <-watch.ResultChan():
+		case e, ok := <-watch.ResultChan():
+			if !ok {
+				// The channel has been closed. Let's retry watching in case it timed out on idle,
+				// or fail in case connection to the server cannot be re-established.
+				watch, err = apiExportClient.Watch(ctx, &apisv1alpha1.APIExportList{}, selector)
+				if err != nil {
+					return nil, fmt.Errorf("error watching for APIExport: %w", err)
+				}
+			}
+
 			apiExport, ok := e.Object.(*apisv1alpha1.APIExport)
 			if !ok {
 				continue
