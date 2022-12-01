@@ -260,6 +260,7 @@ func restConfigForAPIExport(ctx context.Context, cfg *rest.Config, apiExportName
 	for {
 		select {
 		case <-ctx.Done():
+			watch.Stop()
 			return nil, ctx.Err()
 		case e := <-watch.ResultChan():
 			apiExport, ok := e.Object.(*apisv1alpha1.APIExport)
