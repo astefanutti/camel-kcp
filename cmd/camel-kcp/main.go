@@ -240,11 +240,6 @@ func main() {
 // restConfigForAPIExport returns a *rest.Config properly configured to communicate with the endpoint for the
 // APIExport's virtual workspace.
 func restConfigForAPIExport(ctx context.Context, cfg *rest.Config, apiExportName string) (*rest.Config, error) {
-	scheme := runtime.NewScheme()
-	if err := apisv1alpha1.AddToScheme(scheme); err != nil {
-		return nil, fmt.Errorf("error adding apis.kcp.dev/v1alpha1 to scheme: %w", err)
-	}
-
 	apiExportClient, err := ctrlclient.NewWithWatch(cfg, ctrlclient.Options{Scheme: scheme})
 	if err != nil {
 		return nil, fmt.Errorf("error creating APIExport client: %w", err)
