@@ -282,7 +282,7 @@ func restConfigForAPIExport(ctx context.Context, cfg *rest.Config, apiExportName
 			case watch.Added, watch.Modified:
 				apiExport, ok := e.Object.(*apisv1alpha1.APIExport)
 				if !ok {
-					continue
+					return nil, fmt.Errorf("unexpected event object: %v", e.Object)
 				}
 				if !isAPIExportReady(apiExport) {
 					continue
