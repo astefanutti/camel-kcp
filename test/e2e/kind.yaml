@@ -28,5 +28,5 @@ nodes:
             node-labels: "ingress-ready=true"
 containerdConfigPatches:
   - |-
-    [plugins."io.containerd.grpc.v1.cri".registry.mirrors.registry"]
+    [plugins."io.containerd.grpc.v1.cri".registry.mirrors.registry]
       endpoint = ["http://registry"]
