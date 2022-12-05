@@ -138,6 +138,16 @@ jobs:
 
           export KUBECONFIG=.kcp/admin.kubeconfig
 
+          ./bin/kubectl-kcp ws use root
+
+          # Get root scheduling APIExport identity hash
+          SCHEDULING_IDENTITY_HASH=$(kubectl get apiexport scheduling.kcp.dev -o json | jq -r .status.identityHash)
+
+          ./bin/kubectl-kcp ws use "root:compute"
+
+          # Get root compute APIExport identity hash
+          KUBERNETES_IDENTITY_HASH=$(kubectl get apiexport kubernetes -o json | jq -r .status.identityHash)
+
           # Create service workspace
           ./bin/kubectl-kcp ws create camel-k --enter
 
@@ -190,6 +200,12 @@ jobs:
           kubectl label synctarget compute "org.apache.camel/compute-plane="
           kubectl wait --timeout=300s --for=condition=Ready=true synctarget compute
 
+          # Install service APIs
+          ./bin/kustomize fn run config/kcp --image gcr.io/kpt-fn/apply-setters:v0.2.0 -- \
+          kubernetes-identity-hash="${KUBERNETES_IDENTITY_HASH}" \
+          scheduling-identity-hash="${SCHEDULING_IDENTITY_HASH}"
+          ./bin/kustomize build config/kcp | kubectl apply --server-side -f -
+
       - name: Shutdown camel-kcp
         if: ${{ always() }}
         run: |
@@ -198,6 +214,7 @@ jobs:
 
           echo "Printing camel-kcp logs"
           cat ${{ env.CAMEL_KCP_LOG_FILE }}
+
       - name: Shutdown kcp
         if: ${{ always() }}
         run: |
