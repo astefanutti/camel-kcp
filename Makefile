@@ -164,17 +164,17 @@ get-kind-version:
 
 .PHONY: controller-gen
 controller-gen: $(CONTROLLER_GEN) ## Download controller-gen locally if necessary
-$(CONTROLLER_GEN):
+$(CONTROLLER_GEN): $(LOCALBIN)
 	GOBIN=$(LOCALBIN) go install sigs.k8s.io/controller-tools/cmd/controller-gen@$(CONTROLLER_TOOLS_VERSION)
 
 .PHONY: kustomize
 kustomize: $(KUSTOMIZE) ## Download kustomize locally if necessary
-$(KUSTOMIZE):
+$(KUSTOMIZE): $(LOCALBIN)
 	GOBIN=$(LOCALBIN) go install sigs.k8s.io/kustomize/kustomize/v4@$(KUSTOMIZE_VERSION)
 
 .PHONY: kcp
 kcp: $(KCP) ## Download kcp locally if necessary
-$(KCP):
+$(KCP): $(LOCALBIN)
 	rm -rf ./tmp/kcp
 	git clone --depth=1 --branch ${KCP_BRANCH} https://github.com/kcp-dev/kcp ./tmp/kcp
 	cd ./tmp/kcp && IGNORE_GO_VERSION=1 GOWORK=off make
@@ -183,5 +183,5 @@ $(KCP):
 
 .PHONY: kind
 kind: $(KIND) ## Download kind locally if necessary
-$(KIND):
+$(KIND): $(LOCALBIN)
 	GOBIN=$(LOCALBIN) go install sigs.k8s.io/kind@$(KIND_VERSION)
