@@ -75,14 +75,14 @@ jobs:
           echo "KIND_VERSION=${KIND_VERSION}" >> $GITHUB_ENV
           echo ${KIND_VERSION}
       - name: Kubernetes KinD control cluster
-        uses: helm/kind-action@v1.2.0
+        uses: helm/kind-action@v1.4.0
         with:
           cluster_name: kcp-control-cluster
           #node_image: kindest/node:v1.21.1@sha256:fae9a58f17f18f06aeac9772ca8b5ac680ebbed985e266f711d936e91d113bad
           version: ${{ env.KIND_VERSION }}
           config: ./test/e2e/kind.yaml
       - name: Kubernetes KinD compute cluster
-        uses: helm/kind-action@v1.2.0
+        uses: helm/kind-action@v1.4.0
         with:
           cluster_name: kcp-compute-cluster
           #node_image: kindest/node:v1.21.1@sha256:fae9a58f17f18f06aeac9772ca8b5ac680ebbed985e266f711d936e91d113bad
