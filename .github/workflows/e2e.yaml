@@ -107,12 +107,12 @@ jobs:
           echo "Control cluster:"
           kubectl --context kind-kcp-control-cluster cluster-info
           kubectl --context kind-kcp-control-cluster describe nodes
-          kind get kubeconfig --name kind-kcp-control-cluster > ${{ env.TEMP_DIR }}/control.kubeconfig
+          kind get kubeconfig --name kcp-control-cluster > ${{ env.TEMP_DIR }}/control.kubeconfig
 
           echo "Compute cluster:"
           kubectl --context kind-kcp-compute-cluster cluster-info
           kubectl --context kind-kcp-compute-cluster describe nodes
-          kind get kubeconfig --name kind-kcp-compute-cluster > ${{ env.TEMP_DIR }}/compute.kubeconfig
+          kind get kubeconfig --name kcp-compute-cluster > ${{ env.TEMP_DIR }}/compute.kubeconfig
       - name: Run kcp and camel-kcp
         run: |
           echo "Building kcp"
