@@ -138,8 +138,47 @@ jobs:
 
           export KUBECONFIG=.kcp/admin.kubeconfig
 
+          # Create service workspace
           ./bin/kubectl-kcp ws create root:camel-k --enter
 
+          # Create control and compute plane locations
+          cat <<EOF | kubectl apply -f -
+          apiVersion: scheduling.kcp.dev/v1alpha1
+          kind: Location
+          metadata:
+            name: control
+            labels:
+              org.apache.camel/control-plane: ""
+          spec:
+            resource:
+              group: workload.kcp.dev
+              resource: synctargets
+              version: v1alpha1
+            instanceSelector:
+              matchExpressions:
+                - key: org.apache.camel/control-plane
+                  operator: Exists
+          EOF
+
+          cat <<EOF | kubectl apply -f -
+          apiVersion: scheduling.kcp.dev/v1alpha1
+          kind: Location
+          metadata:
+            name: compute
+            labels:
+              org.apache.camel/compute-plane: ""
+          spec:
+            resource:
+              group: workload.kcp.dev
+              resource: synctargets
+              version: v1alpha1
+            instanceSelector:
+              matchExpressions:
+                - key: org.apache.camel/compute-plane
+                  operator: Exists
+          EOF
+
+          # Create sync targets
           kubectl create namespace kcp-syncer
           KCP_SYNCER_IMAGE="ghcr.io/kcp-dev/kcp/syncer:$(make get-kcp-version)"
 
