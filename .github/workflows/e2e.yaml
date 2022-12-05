@@ -45,10 +45,6 @@ jobs:
     runs-on: ubuntu-20.04
 
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v2
-        with:
-          submodules: recursive
       - name: Cleanup
         run: |
           ls -lart
@@ -67,15 +63,29 @@ jobs:
 
           echo "Final status:"
           df -h
+
+      - name: Checkout code
+        uses: actions/checkout@v2
+        with:
+          submodules: recursive
+
+      - name: Temp directory
+        run: |
+          TEMP_DIR="$(pwd)/tmp"
+          mkdir -p "${TEMP_DIR}"
+          echo "TEMP_DIR=${TEMP_DIR}" >> $GITHUB_ENV
+
       - name: Set Go
         uses: actions/setup-go@v2
         with:
           go-version: v1.18
+
       - name: Get KinD version
         run: |
           KIND_VERSION=$(make get-kind-version)
           echo "KIND_VERSION=${KIND_VERSION}" >> $GITHUB_ENV
           echo ${KIND_VERSION}
+
       - name: Kubernetes KinD control cluster
         uses: helm/kind-action@v1.4.0
         with:
@@ -83,6 +93,7 @@ jobs:
           #node_image: kindest/node:v1.21.1@sha256:fae9a58f17f18f06aeac9772ca8b5ac680ebbed985e266f711d936e91d113bad
           version: ${{ env.KIND_VERSION }}
           config: ./test/e2e/kind.yaml
+
       - name: Kubernetes KinD compute cluster
         uses: helm/kind-action@v1.4.0
         with:
@@ -90,15 +101,18 @@ jobs:
           #node_image: kindest/node:v1.21.1@sha256:fae9a58f17f18f06aeac9772ca8b5ac680ebbed985e266f711d936e91d113bad
           version: ${{ env.KIND_VERSION }}
           config: ./test/e2e/kind.yaml
+
       - name: Info
         run: |
           echo "Control cluster:"
           kubectl --context kind-kcp-control-cluster cluster-info
           kubectl --context kind-kcp-control-cluster describe nodes
+          kind get kubeconfig --name kind-kcp-control-cluster > ${{ env.TEMP_DIR }}/control.kubeconfig
 
           echo "Compute cluster:"
           kubectl --context kind-kcp-compute-cluster cluster-info
           kubectl --context kind-kcp-compute-cluster describe nodes
+          kind get kubeconfig --name kind-kcp-compute-cluster > ${{ env.TEMP_DIR }}/compute.kubeconfig
       - name: Run kcp and camel-kcp
         run: |
           echo "Building kcp"
@@ -106,9 +120,6 @@ jobs:
 
           echo "Building camel-kcp"
           make build
-
-          TEMP_DIR="$(pwd)/tmp"
-          mkdir -p "${TEMP_DIR}"
 
           KCP_LOG_FILE="${TEMP_DIR}"/kcp.log
           echo "KCP_LOG_FILE=${KCP_LOG_FILE}" >> $GITHUB_ENV
@@ -124,6 +135,19 @@ jobs:
             echo "KCP failed to start, see ${KCP_LOG_FILE} for info."
             exit 1
           fi
+
+          export KUBECONFIG=.kcp/admin.kubeconfig
+
+          ./bin/kubectl-kcp ws create root:camel-k --enter
+
+          kubectl create namespace kcp-syncer
+          KCP_SYNCER_IMAGE="ghcr.io/kcp-dev/kcp/syncer:$(make get-kcp-version)"
+
+          ./bin/kubectl-kcp workload sync control --kcp-namespace kcp-syncer --syncer-image=${KCP_SYNCER_IMAGE} | kubectl --kubeconfig ${TEMP_DIR}/control.kubeconfig apply --server-side -f -
+          kubectl wait --timeout=300s --for=condition=Ready=true synctarget control
+
+          ./bin/kubectl-kcp workload sync compute --kcp-namespace kcp-syncer --syncer-image=${KCP_SYNCER_IMAGE} | kubectl --kubeconfig ${TEMP_DIR}/compute.kubeconfig apply --server-side -f -
+          kubectl wait --timeout=300s --for=condition=Ready=true synctarget compute
 
       - name: Shutdown camel-kcp
         if: ${{ always() }}

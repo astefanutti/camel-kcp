@@ -158,10 +158,6 @@ CONTROLLER_TOOLS_VERSION ?= v0.8.0
 KUSTOMIZE_VERSION ?= v4.5.4
 KIND_VERSION ?= v0.14.0
 
-.PHONY: get-kind-version
-get-kind-version:
-	@echo $(KIND_VERSION)
-
 .PHONY: controller-gen
 controller-gen: $(CONTROLLER_GEN) ## Download controller-gen locally if necessary
 $(CONTROLLER_GEN): $(LOCALBIN)
@@ -185,3 +181,11 @@ $(KCP): $(LOCALBIN)
 kind: $(KIND) ## Download kind locally if necessary
 $(KIND): $(LOCALBIN)
 	GOBIN=$(LOCALBIN) go install sigs.k8s.io/kind@$(KIND_VERSION)
+
+.PHONY: get-kind-version
+get-kind-version:
+	@echo $(KIND_VERSION)
+
+.PHONY: get-kcp-version
+get-kcp-version:
+	@echo $(KCP_BRANCH)
