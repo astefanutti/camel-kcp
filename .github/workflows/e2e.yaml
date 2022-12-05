@@ -209,6 +209,23 @@ jobs:
           scheduling-identity-hash="${SCHEDULING_IDENTITY_HASH}"
           ./bin/kustomize build config/kcp | kubectl apply --server-side -f -
 
+          # Start camel-kcp
+          CAMEL_KCP_LOG_FILE="${TEMP_DIR}"/camel-kcp.log
+          echo "CAMEL_KCP_LOG_FILE=${CAMEL_KCP_LOG_FILE}" >> $GITHUB_ENV
+
+          echo "Starting camel-kcp, writing logs to ${CAMEL_KCP_LOG_FILE}"
+          ./bin/camel-kcp > ${CAMEL_KCP_LOG_FILE} 2>&1 &
+          CAMEL_KCP_PID=$!
+          echo "CAMEL_KCP_PID=${CAMEL_KCP_PID}" >> $GITHUB_ENV
+
+          echo "Waiting 15 seconds..."
+          sleep 15
+
+          if ! ps -p ${CAMEL_KCP_PID}; then
+            echo "camel-kcp failed to start, see ${CAMEL_KCP_LOG_FILE} for info."
+            exit 1
+          fi
+
       - name: Shutdown camel-kcp
         if: ${{ always() }}
         run: |
