@@ -139,7 +139,7 @@ jobs:
           export KUBECONFIG=.kcp/admin.kubeconfig
 
           # Create service workspace
-          ./bin/kubectl-kcp ws create root:camel-k --enter
+          ./bin/kubectl-kcp ws create camel-k --enter
 
           # Create control and compute plane locations
           cat <<EOF | kubectl apply -f -
