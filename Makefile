@@ -132,6 +132,13 @@ local-setup: export KCP_VERSION=${KCP_BRANCH}
 local-setup: clean kind kcp kustomize build ## Setup kcp locally with KinD clusters
 	./scripts/local-setup.sh -c ${NUM_CLUSTERS}
 
+##@ Test
+
+.PHONY: e2e
+e2e: build ## Run e2e tests
+	KUBECONFIG="$(KUBECONFIG)" CLUSTERS_KUBECONFIG_DIR="$(CLUSTERS_KUBECONFIG_DIR)" \
+	go test -count=1 -timeout 60m -v ./test/e2e -tags=e2e
+
 ##@ Build Dependencies
 
 ## Location to install dependencies to
@@ -150,6 +157,10 @@ KIND ?= $(LOCALBIN)/kind
 CONTROLLER_TOOLS_VERSION ?= v0.8.0
 KUSTOMIZE_VERSION ?= v4.5.4
 KIND_VERSION ?= v0.14.0
+
+.PHONY: get-kind-version
+get-kind-version:
+	@echo $(KIND_VERSION)
 
 .PHONY: controller-gen
 controller-gen: $(CONTROLLER_GEN) ## Download controller-gen locally if necessary

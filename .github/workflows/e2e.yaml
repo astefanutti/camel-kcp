@@ -1,0 +1,141 @@
+# ---------------------------------------------------------------------------
+# Licensed to the Apache Software Foundation (ASF) under one or more
+# contributor license agreements.  See the NOTICE file distributed with
+# this work for additional information regarding copyright ownership.
+# The ASF licenses this file to You under the Apache License, Version 2.0
+# (the "License"); you may not use this file except in compliance with
+# the License.  You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+# ---------------------------------------------------------------------------
+
+name: e2e
+
+on:
+  pull_request:
+    branches:
+      - main
+      - 'release-*'
+    paths-ignore:
+      - '**.adoc'
+      - '**.md'
+      - 'LICENSE'
+  push:
+    branches:
+      - main
+      - 'release-*'
+    paths-ignore:
+      - '**.adoc'
+      - '**.md'
+      - 'LICENSE'
+
+concurrency:
+  group: ${{ github.head_ref }}-${{ github.workflow }}
+  cancel-in-progress: true
+
+jobs:
+  kubernetes:
+
+    runs-on: ubuntu-20.04
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+      - name: Cleanup
+        run: |
+          ls -lart
+          echo "Initial status:"
+          df -h
+
+          echo "Cleaning up resources:"
+          sudo swapoff -a
+          sudo rm -f /swapfile
+          sudo apt clean
+          sudo rm -rf /usr/share/dotnet
+          sudo rm -rf /opt/ghc
+          sudo rm -rf "/usr/local/share/boost"
+          sudo rm -rf "$AGENT_TOOLSDIRECTORY"
+          docker rmi $(docker image ls -aq)
+
+          echo "Final status:"
+          df -h
+      - name: Set Go
+        uses: actions/setup-go@v2
+        with:
+          go-version: v1.18
+      - name: Get KinD version
+        run: |
+          KIND_VERSION=$(make get-kind-version)
+          echo "KIND_VERSION=${KIND_VERSION}" >> $GITHUB_ENV
+          echo ${KIND_VERSION}
+      - name: Kubernetes KinD control cluster
+        uses: helm/kind-action@v1.2.0
+        with:
+          cluster_name: kcp-control-cluster
+          #node_image: kindest/node:v1.21.1@sha256:fae9a58f17f18f06aeac9772ca8b5ac680ebbed985e266f711d936e91d113bad
+          version: ${{ env.KIND_VERSION }}
+          config: ./test/e2e/kind.yaml
+      - name: Kubernetes KinD compute cluster
+        uses: helm/kind-action@v1.2.0
+        with:
+          cluster_name: kcp-compute-cluster
+          #node_image: kindest/node:v1.21.1@sha256:fae9a58f17f18f06aeac9772ca8b5ac680ebbed985e266f711d936e91d113bad
+          version: ${{ env.KIND_VERSION }}
+          config: ./test/e2e/kind.yaml
+      - name: Info
+        run: |
+          echo "Control cluster:"
+          kubectl --context kind-kcp-control-cluster cluster-info
+          kubectl --context kind-kcp-control-cluster describe nodes
+
+          echo "Compute cluster:"
+          kubectl --context kind-kcp-compute-cluster cluster-info
+          kubectl --context kind-kcp-compute-cluster describe nodes
+      - name: Run kcp and camel-kcp
+        run: |
+          echo "Building kcp"
+          make kcp
+
+          echo "Building camel-kcp"
+          make build
+
+          TEMP_DIR="$(pwd)/tmp"
+          mkdir -p "${TEMP_DIR}"
+
+          KCP_LOG_FILE="${TEMP_DIR}"/kcp.log
+          echo "KCP_LOG_FILE=${KCP_LOG_FILE}" >> $GITHUB_ENV
+          echo "Starting kcp, sending logs to ${KCP_LOG_FILE}"
+          ./bin/kcp start  > ${KCP_LOG_FILE} 2>&1 &
+          KCP_PID=$!
+          echo "KCP_PID=${KCP_PID}" >> $GITHUB_ENV
+
+          echo "Waiting 30 seconds..."
+          sleep 30
+
+          if ! ps -p ${KCP_PID}; then
+            echo "KCP failed to start, see ${KCP_LOG_FILE} for info."
+            exit 1
+          fi
+
+      - name: Shutdown camel-kcp
+        if: ${{ always() }}
+        run: |
+          echo "Kill camel-kcp process"
+          kill ${{ env.CAMEL_KCP_PID }}
+
+          echo "Printing camel-kcp logs"
+          cat ${{ env.CAMEL_KCP_LOG_FILE }}
+      - name: Shutdown kcp
+        if: ${{ always() }}
+        run: |
+          echo "Kill KCP process"
+          kill ${{ env.KCP_PID }}
+
+          echo "Printing KCP logs"
+          cat ${{ env.KCP_LOG_FILE }}
