@@ -183,9 +183,11 @@ jobs:
           KCP_SYNCER_IMAGE="ghcr.io/kcp-dev/kcp/syncer:$(make get-kcp-version)"
 
           ./bin/kubectl-kcp workload sync control --kcp-namespace kcp-syncer --syncer-image=${KCP_SYNCER_IMAGE} | kubectl --kubeconfig ${TEMP_DIR}/control.kubeconfig apply --server-side -f -
+          kubectl label synctarget control "org.apache.camel/control-plane="
           kubectl wait --timeout=300s --for=condition=Ready=true synctarget control
 
           ./bin/kubectl-kcp workload sync compute --kcp-namespace kcp-syncer --syncer-image=${KCP_SYNCER_IMAGE} | kubectl --kubeconfig ${TEMP_DIR}/compute.kubeconfig apply --server-side -f -
+          kubectl label synctarget compute "org.apache.camel/compute-plane="
           kubectl wait --timeout=300s --for=condition=Ready=true synctarget compute
 
       - name: Shutdown camel-kcp
