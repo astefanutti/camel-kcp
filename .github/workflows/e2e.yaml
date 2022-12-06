@@ -69,11 +69,14 @@ jobs:
         with:
           submodules: recursive
 
-      - name: Temp directory
+      - name: Init directories
         run: |
           TEMP_DIR="$(pwd)/tmp"
           mkdir -p "${TEMP_DIR}"
           echo "TEMP_DIR=${TEMP_DIR}" >> $GITHUB_ENV
+
+          mkdir -p "$(pwd)/bin"
+          echo "$(pwd)/bin" >> $GITHUB_PATH
 
       - name: Set Go
         uses: actions/setup-go@v2
@@ -113,6 +116,7 @@ jobs:
           kubectl --context kind-kcp-compute-cluster cluster-info
           kubectl --context kind-kcp-compute-cluster describe nodes
           kind get kubeconfig --name kcp-compute-cluster > ${{ env.TEMP_DIR }}/compute.kubeconfig
+
       - name: Run kcp and camel-kcp
         run: |
           echo "Building kcp"
@@ -127,7 +131,7 @@ jobs:
           KCP_LOG_FILE="${TEMP_DIR}"/kcp.log
           echo "KCP_LOG_FILE=${KCP_LOG_FILE}" >> $GITHUB_ENV
           echo "Starting kcp, sending logs to ${KCP_LOG_FILE}"
-          ./bin/kcp start --batteries-included=+user > ${KCP_LOG_FILE} 2>&1 &
+          kcp start --batteries-included=+user > ${KCP_LOG_FILE} 2>&1 &
           KCP_PID=$!
           echo "KCP_PID=${KCP_PID}" >> $GITHUB_ENV
 
@@ -141,18 +145,18 @@ jobs:
 
           export KUBECONFIG=.kcp/admin.kubeconfig
 
-          ./bin/kubectl-kcp ws use root
+          kubectl kcp ws use root
 
           # Get root scheduling APIExport identity hash
           SCHEDULING_IDENTITY_HASH=$(kubectl get apiexport scheduling.kcp.dev -o json | jq -r .status.identityHash)
 
-          ./bin/kubectl-kcp ws use "root:compute"
+          kubectl kcp ws use "root:compute"
 
           # Get root compute APIExport identity hash
           KUBERNETES_IDENTITY_HASH=$(kubectl get apiexport kubernetes -o json | jq -r .status.identityHash)
 
           # Create service workspace
-          ./bin/kubectl-kcp ws create camel-k --enter
+          kubectl kcp ws create camel-k --enter
 
           # Create control and compute plane locations
           cat <<EOF | kubectl apply -f -
@@ -195,26 +199,26 @@ jobs:
           kubectl create namespace kcp-syncer
           KCP_SYNCER_IMAGE="ghcr.io/kcp-dev/kcp/syncer:$(make get-kcp-version)"
 
-          ./bin/kubectl-kcp workload sync control --kcp-namespace kcp-syncer --syncer-image=${KCP_SYNCER_IMAGE} -o - | kubectl --kubeconfig ${TEMP_DIR}/control.kubeconfig apply --server-side -f -
+          kubectl kcp workload sync control --kcp-namespace kcp-syncer --syncer-image=${KCP_SYNCER_IMAGE} -o - | kubectl --kubeconfig ${TEMP_DIR}/control.kubeconfig apply --server-side -f -
           kubectl label synctarget control "org.apache.camel/control-plane="
           kubectl wait --timeout=300s --for=condition=Ready=true synctarget control
 
-          ./bin/kubectl-kcp workload sync compute --kcp-namespace kcp-syncer --syncer-image=${KCP_SYNCER_IMAGE} -o - | kubectl --kubeconfig ${TEMP_DIR}/compute.kubeconfig apply --server-side -f -
+          kubectl kcp workload sync compute --kcp-namespace kcp-syncer --syncer-image=${KCP_SYNCER_IMAGE} -o - | kubectl --kubeconfig ${TEMP_DIR}/compute.kubeconfig apply --server-side -f -
           kubectl label synctarget compute "org.apache.camel/compute-plane="
           kubectl wait --timeout=300s --for=condition=Ready=true synctarget compute
 
           # Install service APIs
-          ./bin/kustomize fn run config/kcp --image gcr.io/kpt-fn/apply-setters:v0.2.0 -- \
+          kustomize fn run config/kcp --image gcr.io/kpt-fn/apply-setters:v0.2.0 -- \
           kubernetes-identity-hash="${KUBERNETES_IDENTITY_HASH}" \
           scheduling-identity-hash="${SCHEDULING_IDENTITY_HASH}"
-          ./bin/kustomize build config/kcp | kubectl apply --server-side -f -
+          kustomize build config/kcp | kubectl apply --server-side -f -
 
           # Start camel-kcp
           CAMEL_KCP_LOG_FILE="${TEMP_DIR}"/camel-kcp.log
           echo "CAMEL_KCP_LOG_FILE=${CAMEL_KCP_LOG_FILE}" >> $GITHUB_ENV
 
           echo "Starting camel-kcp, writing logs to ${CAMEL_KCP_LOG_FILE}"
-          ./bin/camel-kcp > ${CAMEL_KCP_LOG_FILE} 2>&1 &
+          camel-kcp > ${CAMEL_KCP_LOG_FILE} 2>&1 &
           CAMEL_KCP_PID=$!
           echo "CAMEL_KCP_PID=${CAMEL_KCP_PID}" >> $GITHUB_ENV
 
