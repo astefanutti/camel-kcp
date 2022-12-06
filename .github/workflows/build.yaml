@@ -42,7 +42,7 @@ jobs:
       - uses: actions/checkout@v2
         with:
           submodules: recursive
-      - uses: actions/setup-go@v2
+      - uses: actions/setup-go@v3
         with:
           go-version: v1.18
       - uses: golangci/golangci-lint-action@v2
@@ -59,7 +59,7 @@ jobs:
       - uses: actions/checkout@v2
         with:
           submodules: recursive
-      - uses: actions/setup-go@v2
+      - uses: actions/setup-go@v3
         with:
           go-version: v1.18
       - run: make build
