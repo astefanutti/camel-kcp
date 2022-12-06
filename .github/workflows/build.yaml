@@ -45,12 +45,11 @@ jobs:
       - uses: actions/setup-go@v3
         with:
           go-version: v1.18
-      - uses: golangci/golangci-lint-action@v2
+      - uses: golangci/golangci-lint-action@v3
         with:
           version: v1.49.0
           only-new-issues: true
           args: --verbose --deadline 5m
-          skip-go-installation: true
 
   test:
     name: build
