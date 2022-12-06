@@ -21,7 +21,6 @@ import (
 	"testing"
 
 	. "github.com/onsi/gomega"
-	. "github.com/onsi/gomega/gstruct"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
