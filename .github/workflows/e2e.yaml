@@ -232,8 +232,11 @@ jobs:
 
       - name: Run e2e tests
         run: |
+          export KUBECONFIG=.kcp/admin.kubeconfig
+
           kubectl config use-context user
           kubectl kcp ws
+
           make e2e
 
       - name: Shutdown camel-kcp
