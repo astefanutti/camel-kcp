@@ -230,6 +230,12 @@ jobs:
             exit 1
           fi
 
+      - name: Run e2e tests
+        run: |
+          kubectl config use-context user
+          kubectl kcp ws
+          make e2e
+
       - name: Shutdown camel-kcp
         if: ${{ always() }}
         run: |
