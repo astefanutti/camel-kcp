@@ -237,7 +237,7 @@ jobs:
           kubectl config use-context user
           kubectl kcp ws
 
-          make e2e
+          TEST_WORKSPACE=$(kubectl kcp ws . --short) make e2e
 
       - name: Shutdown camel-kcp
         if: ${{ always() }}
