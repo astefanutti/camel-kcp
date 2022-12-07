@@ -47,7 +47,7 @@ jobs:
           go-version: v1.18
       - uses: golangci/golangci-lint-action@v3
         with:
-          version: v1.49.0
+          version: v1.50.1
           only-new-issues: true
           args: --verbose --deadline 5m
 
