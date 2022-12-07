@@ -65,6 +65,63 @@ func (o *inWorkspace[T]) applyTo(to T) error {
 	return nil
 }
 
+func OfType(typeRef tenancyv1alpha1.ClusterWorkspaceTypeReference) Option[*tenancyv1beta1.Workspace] {
+	return &ofType{workspaceTypeReference: typeRef}
+}
+
+type ofType struct {
+	workspaceTypeReference tenancyv1alpha1.ClusterWorkspaceTypeReference
+}
+
+var _ Option[*tenancyv1beta1.Workspace] = &ofType{}
+
+func (o *ofType) applyTo(to *tenancyv1beta1.Workspace) error {
+	to.Spec.Type = o.workspaceTypeReference
+	return nil
+}
+
+func Workspace(t Test, name string) func() *tenancyv1beta1.Workspace {
+	return func() *tenancyv1beta1.Workspace {
+		c, err := t.Client().Kcp().Cluster(TestOrganization).TenancyV1beta1().Workspaces().Get(t.Ctx(), name, metav1.GetOptions{})
+		t.Expect(err).NotTo(gomega.HaveOccurred())
+		return c
+	}
+}
+
+func WorkspacePhase(workspace *tenancyv1beta1.Workspace) tenancyv1alpha1.ClusterWorkspacePhaseType {
+	return workspace.Status.Phase
+}
+
+func createTestWorkspace(t Test, options ...Option[*tenancyv1beta1.Workspace]) *tenancyv1beta1.Workspace {
+	workspace := &tenancyv1beta1.Workspace{
+		ObjectMeta: metav1.ObjectMeta{
+			GenerateName: "test-ws-",
+		},
+		Spec: tenancyv1beta1.WorkspaceSpec{
+			Type: tenancyv1alpha1.ClusterWorkspaceTypeReference{},
+		},
+	}
+
+	for _, option := range options {
+		t.Expect(option.applyTo(workspace)).To(gomega.Succeed())
+	}
+
+	workspace, err := t.Client().Kcp().Cluster(TestOrganization).TenancyV1beta1().Workspaces().Create(t.Ctx(), workspace, metav1.CreateOptions{})
+	if err != nil {
+		t.Expect(err).NotTo(gomega.HaveOccurred())
+	}
+
+	return workspace
+}
+
+func deleteTestWorkspace(t Test, workspace *tenancyv1beta1.Workspace) {
+	propagationPolicy := metav1.DeletePropagationBackground
+	err := t.Client().Kcp().Cluster(logicalcluster.From(workspace)).TenancyV1beta1().Workspaces().Delete(t.Ctx(), workspace.Name, metav1.DeleteOptions{
+		PropagationPolicy: &propagationPolicy,
+	})
+	t.Expect(err).NotTo(gomega.HaveOccurred())
+}
+
 func HasImportedAPIs(t Test, workspace *tenancyv1beta1.Workspace, GVKs ...schema.GroupVersionKind) func(g gomega.Gomega) bool {
 	return func(g gomega.Gomega) bool {
 		// Get the logical cluster for the workspace
@@ -90,42 +147,4 @@ func HasImportedAPIs(t Test, workspace *tenancyv1beta1.Workspace, GVKs ...schema
 
 		return true
 	}
-}
-
-func Workspace(t Test, name string) func() *tenancyv1beta1.Workspace {
-	return func() *tenancyv1beta1.Workspace {
-		c, err := t.Client().Kcp().Cluster(TestOrganization).TenancyV1beta1().Workspaces().Get(t.Ctx(), name, metav1.GetOptions{})
-		t.Expect(err).NotTo(gomega.HaveOccurred())
-		return c
-	}
-}
-
-func WorkspacePhase(workspace *tenancyv1beta1.Workspace) tenancyv1alpha1.ClusterWorkspacePhaseType {
-	return workspace.Status.Phase
-}
-
-func createTestWorkspace(t Test) *tenancyv1beta1.Workspace {
-	workspace := &tenancyv1beta1.Workspace{
-		ObjectMeta: metav1.ObjectMeta{
-			GenerateName: "test-ws-",
-		},
-		Spec: tenancyv1beta1.WorkspaceSpec{
-			Type: tenancyv1alpha1.ClusterWorkspaceTypeReference{},
-		},
-	}
-
-	workspace, err := t.Client().Kcp().Cluster(TestOrganization).TenancyV1beta1().Workspaces().Create(t.Ctx(), workspace, metav1.CreateOptions{})
-	if err != nil {
-		t.Expect(err).NotTo(gomega.HaveOccurred())
-	}
-
-	return workspace
-}
-
-func deleteTestWorkspace(t Test, workspace *tenancyv1beta1.Workspace) {
-	propagationPolicy := metav1.DeletePropagationBackground
-	err := t.Client().Kcp().Cluster(logicalcluster.From(workspace)).TenancyV1beta1().Workspaces().Delete(t.Ctx(), workspace.Name, metav1.DeleteOptions{
-		PropagationPolicy: &propagationPolicy,
-	})
-	t.Expect(err).NotTo(gomega.HaveOccurred())
 }

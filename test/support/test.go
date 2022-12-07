@@ -38,7 +38,7 @@ type Test interface {
 	gomega.Gomega
 
 	NewTestNamespace(...Option[*corev1.Namespace]) *corev1.Namespace
-	NewTestWorkspace() *tenancyv1beta1.Workspace
+	NewTestWorkspace(...Option[*tenancyv1beta1.Workspace]) *tenancyv1beta1.Workspace
 }
 
 type Option[T any] interface {
@@ -97,8 +97,8 @@ func (t *T) Client() Client {
 	return t.client
 }
 
-func (t *T) NewTestWorkspace() *tenancyv1beta1.Workspace {
-	workspace := createTestWorkspace(t)
+func (t *T) NewTestWorkspace(options ...Option[*tenancyv1beta1.Workspace]) *tenancyv1beta1.Workspace {
+	workspace := createTestWorkspace(t, options...)
 	t.T().Cleanup(func() {
 		deleteTestWorkspace(t, workspace)
 	})
