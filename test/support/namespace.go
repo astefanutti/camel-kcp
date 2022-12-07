@@ -26,7 +26,7 @@ import (
 	"github.com/kcp-dev/logicalcluster/v2"
 )
 
-func createTestNamespace(t Test, options ...Option) *corev1.Namespace {
+func createTestNamespace(t Test, options ...Option[*corev1.Namespace]) *corev1.Namespace {
 	namespace := &corev1.Namespace{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: corev1.SchemeGroupVersion.String(),

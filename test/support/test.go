@@ -37,21 +37,21 @@ type Test interface {
 
 	gomega.Gomega
 
-	NewTestNamespace(...Option) *corev1.Namespace
+	NewTestNamespace(...Option[*corev1.Namespace]) *corev1.Namespace
 	NewTestWorkspace() *tenancyv1beta1.Workspace
 }
 
-type Option interface {
-	applyTo(interface{}) error
+type Option[T any] interface {
+	applyTo(to T) error
 }
 
-type errorOption func(to interface{}) error
+type errorOption[T any] func(to T) error
 
-func (o errorOption) applyTo(to interface{}) error {
+func (o errorOption[T]) applyTo(to T) error {
 	return o(to)
 }
 
-var _ Option = errorOption(nil)
+var _ Option[any] = errorOption[any](nil)
 
 func With(t *testing.T) Test {
 	ctx := context.Background()
@@ -106,7 +106,7 @@ func (t *T) NewTestWorkspace() *tenancyv1beta1.Workspace {
 	return workspace
 }
 
-func (t *T) NewTestNamespace(options ...Option) *corev1.Namespace {
+func (t *T) NewTestNamespace(options ...Option[*corev1.Namespace]) *corev1.Namespace {
 	namespace := createTestNamespace(t, options...)
 	t.T().Cleanup(func() {
 		deleteTestNamespace(t, namespace)

@@ -22,6 +22,7 @@ import (
 
 	. "github.com/onsi/gomega"
 
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	"github.com/kcp-dev/logicalcluster/v2"
@@ -39,7 +40,7 @@ func TestIntegration(t *testing.T) {
 	workspace := test.NewTestWorkspace()
 
 	// Create a namespace
-	namespace := test.NewTestNamespace(InWorkspace(workspace))
+	namespace := test.NewTestNamespace(InWorkspace[*corev1.Namespace](workspace))
 
 	// Create the Integration
 	integration := &v1.Integration{

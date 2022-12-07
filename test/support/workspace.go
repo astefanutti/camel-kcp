@@ -32,35 +32,33 @@ import (
 	"github.com/kcp-dev/logicalcluster/v2"
 )
 
-func InWorkspace(workspace interface{}) Option {
-	switch w := workspace.(type) {
+type WorkspaceRef interface {
+	*tenancyv1beta1.Workspace | logicalcluster.Name
+}
+
+func InWorkspace[T metav1.Object, W WorkspaceRef](workspace W) Option[T] {
+	switch w := any(workspace).(type) {
 	case *tenancyv1beta1.Workspace:
-		return &inWorkspace{logicalcluster.From(w).Join(w.Name)}
+		return &inWorkspace[T]{logicalcluster.From(w).Join(w.Name)}
 	case logicalcluster.Name:
-		return &inWorkspace{w}
+		return &inWorkspace[T]{w}
 	default:
-		return errorOption(func(to interface{}) error {
+		return errorOption[T](func(to T) error {
 			return fmt.Errorf("unsupported type passed to InWorkspace option: %s", workspace)
 		})
 	}
 }
 
-type inWorkspace struct {
+type inWorkspace[T metav1.Object] struct {
 	workspace logicalcluster.Name
 }
 
-var _ Option = &inWorkspace{}
+var _ Option[metav1.Object] = &inWorkspace[metav1.Object]{}
 
-func (o *inWorkspace) applyTo(to interface{}) error {
-	switch obj := to.(type) {
-	case metav1.Object:
-		obj.SetAnnotations(map[string]string{
-			logicalcluster.AnnotationKey: o.workspace.String(),
-		})
-
-	default:
-		return fmt.Errorf("cannot apply InWorkspace option to %q", to)
-	}
+func (o *inWorkspace[T]) applyTo(to T) error {
+	to.SetAnnotations(map[string]string{
+		logicalcluster.AnnotationKey: o.workspace.String(),
+	})
 
 	return nil
 }
