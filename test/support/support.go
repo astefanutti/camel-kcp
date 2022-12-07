@@ -21,6 +21,8 @@ import (
 	"os"
 
 	"github.com/kcp-dev/logicalcluster/v2"
+
+	tenancyv1alpha1 "github.com/kcp-dev/kcp/pkg/apis/tenancy/v1alpha1"
 )
 
 const (
@@ -29,6 +31,8 @@ const (
 
 var (
 	TestOrganization = getEnvLogicalClusterName(testWorkspaceName, logicalcluster.New("root:camel-kcp"))
+
+	CamelWorkspaceType = tenancyv1alpha1.ClusterWorkspaceTypeReference{Name: "camel-k"}
 )
 
 func getEnvLogicalClusterName(key string, fallback logicalcluster.Name) logicalcluster.Name {

@@ -37,7 +37,7 @@ func TestIntegration(t *testing.T) {
 	test.T().Parallel()
 
 	// Create the test workspace
-	workspace := test.NewTestWorkspace()
+	workspace := test.NewTestWorkspace(OfType(CamelWorkspaceType))
 
 	// Create a namespace
 	namespace := test.NewTestNamespace(InWorkspace[*corev1.Namespace](workspace))
