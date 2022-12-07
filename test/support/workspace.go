@@ -44,7 +44,7 @@ func InWorkspace[T metav1.Object, W WorkspaceRef](workspace W) Option[T] {
 		return &inWorkspace[T]{w}
 	default:
 		return errorOption[T](func(to T) error {
-			return fmt.Errorf("unsupported type passed to InWorkspace option: %s", workspace)
+			return fmt.Errorf("unsupported type passed to InWorkspace option: %s", w)
 		})
 	}
 }
@@ -55,6 +55,8 @@ type inWorkspace[T metav1.Object] struct {
 
 var _ Option[metav1.Object] = &inWorkspace[metav1.Object]{}
 
+// nolint: unused
+// to be removed when the false-positivity is fixed
 func (o *inWorkspace[T]) applyTo(to T) error {
 	to.SetAnnotations(map[string]string{
 		logicalcluster.AnnotationKey: o.workspace.String(),
