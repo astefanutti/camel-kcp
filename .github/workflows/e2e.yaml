@@ -150,6 +150,9 @@ jobs:
           # Get root scheduling APIExport identity hash
           SCHEDULING_IDENTITY_HASH=$(kubectl get apiexport scheduling.kcp.dev -o json | jq -r .status.identityHash)
 
+          # Install camel-k ClusterWorkspaceType
+          kustomize build config/kcp/workspace_type | kubectl apply --server-side -f -
+
           kubectl kcp ws use "root:compute"
 
           # Get root compute APIExport identity hash
