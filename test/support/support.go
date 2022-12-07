@@ -30,7 +30,7 @@ const (
 )
 
 var (
-	TestOrganization = getEnvLogicalClusterName(testWorkspaceName, logicalcluster.New("root:camel-kcp"))
+	TestWorkspace = getEnvLogicalClusterName(testWorkspaceName, logicalcluster.New("root:camel-kcp"))
 
 	CamelWorkspaceType = tenancyv1alpha1.ClusterWorkspaceTypeReference{Name: "camel-k"}
 )

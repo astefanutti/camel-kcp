@@ -82,7 +82,7 @@ func (o *ofType) applyTo(to *tenancyv1beta1.Workspace) error {
 
 func Workspace(t Test, name string) func() *tenancyv1beta1.Workspace {
 	return func() *tenancyv1beta1.Workspace {
-		c, err := t.Client().Kcp().Cluster(TestOrganization).TenancyV1beta1().Workspaces().Get(t.Ctx(), name, metav1.GetOptions{})
+		c, err := t.Client().Kcp().Cluster(TestWorkspace).TenancyV1beta1().Workspaces().Get(t.Ctx(), name, metav1.GetOptions{})
 		t.Expect(err).NotTo(gomega.HaveOccurred())
 		return c
 	}
@@ -106,7 +106,7 @@ func createTestWorkspace(t Test, options ...Option[*tenancyv1beta1.Workspace]) *
 		t.Expect(option.applyTo(workspace)).To(gomega.Succeed())
 	}
 
-	workspace, err := t.Client().Kcp().Cluster(TestOrganization).TenancyV1beta1().Workspaces().Create(t.Ctx(), workspace, metav1.CreateOptions{})
+	workspace, err := t.Client().Kcp().Cluster(TestWorkspace).TenancyV1beta1().Workspaces().Create(t.Ctx(), workspace, metav1.CreateOptions{})
 	if err != nil {
 		t.Expect(err).NotTo(gomega.HaveOccurred())
 	}
