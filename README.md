@@ -43,15 +43,13 @@ $ make local-deploy
 
 Once camel-kcp is running, you can exercise it using one of the methods below.
 
-### Manual
-
 It is recommended to install the kcp plugin, by running the following command once:
 
 ```console
 $ go install ./cmd/kubectl-kcp
 ```
 
-Then, switch to using the `user` context and workspace, by running:
+And to switch to using the `user` context and workspace, by running:
 
 ```console
 $ export KUBECONFIG=.kcp/admin.kubeconfig
@@ -59,7 +57,9 @@ $ kubectl config use-context user
 $ kubectl kcp ws
 ```
 
-Then, create a child workspace, with Camel K ready to use:
+### Manual
+
+You can create a workspace, with Camel K ready to use, by running:
 
 ```console
 $ kubectl kcp ws create demo --type camel-k --enter
@@ -88,3 +88,11 @@ EOF
 ```
 
 Alternatively, you can use the `run` command of the Camel K CLI.
+
+### E2E
+
+You can run the e2e test suite, by executing the following command:
+
+```console
+$ TEST_WORKSPACE=$(kubectl kcp ws . --short) make e2e
+```
