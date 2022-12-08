@@ -158,6 +158,8 @@ sleep 5
 ${KUBECTL_KCP_BIN} workspace use "root"
 
 # Install Camel K cluster workspace type
+${KUSTOMIZE_BIN} fn run config/kcp --image gcr.io/kpt-fn/apply-setters:v0.2.0 -- \
+camel-kcp-export-path="root:camel-k:camel-kcp"
 ${KUSTOMIZE_BIN} build config/kcp/workspace_type | kubectl apply --server-side -f -
 
 # Get root scheduling APIExport identity hash
