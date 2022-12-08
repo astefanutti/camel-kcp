@@ -18,6 +18,7 @@ limitations under the License.
 package support
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/onsi/gomega"
@@ -31,6 +32,10 @@ import (
 
 	"github.com/kcp-dev/logicalcluster/v2"
 )
+
+func Inside(ctx context.Context, workspace *tenancyv1beta1.Workspace) context.Context {
+	return logicalcluster.WithCluster(ctx, logicalcluster.From(workspace).Join(workspace.Name))
+}
 
 type WorkspaceRef interface {
 	*tenancyv1beta1.Workspace | logicalcluster.Name

@@ -25,8 +25,6 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
-	"github.com/kcp-dev/logicalcluster/v2"
-
 	v1 "github.com/apache/camel-k/pkg/apis/camel/v1"
 
 	. "github.com/apache/camel-kcp/test/support"
@@ -48,6 +46,6 @@ func TestIntegration(t *testing.T) {
 			Name: "test",
 		},
 	}
-	_, err := test.Client().CamelV1().Integrations(namespace.Name).Create(logicalcluster.WithCluster(test.Ctx(), logicalcluster.From(workspace)), integration, metav1.CreateOptions{})
+	_, err := test.Client().CamelV1().Integrations(namespace.Name).Create(Inside(test.Ctx(), workspace), integration, metav1.CreateOptions{})
 	test.Expect(err).NotTo(HaveOccurred())
 }
