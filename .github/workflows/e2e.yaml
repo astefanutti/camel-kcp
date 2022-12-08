@@ -153,7 +153,7 @@ jobs:
           # Install camel-k ClusterWorkspaceType
           kustomize build config/kcp/workspace_type | kubectl apply --server-side -f -
 
-          kubectl kcp ws use "root:compute"
+          kubectl kcp ws use root:compute
 
           # Get root compute APIExport identity hash
           KUBERNETES_IDENTITY_HASH=$(kubectl get apiexport kubernetes -o json | jq -r .status.identityHash)
@@ -188,6 +188,8 @@ jobs:
               kind: Group
               name: system:authenticated
           EOF
+
+          kubectl kcp ws use root
 
           # Create service workspace
           kubectl kcp ws create camel-k --enter
