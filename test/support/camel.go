@@ -15,41 +15,21 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package e2e
+package support
 
 import (
-	"testing"
-
-	. "github.com/onsi/gomega"
+	"github.com/onsi/gomega"
 
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	camelv1 "github.com/apache/camel-k/pkg/apis/camel/v1"
-
-	. "github.com/apache/camel-kcp/test/support"
 )
 
-func TestIntegration(t *testing.T) {
-	test := With(t)
-	test.T().Parallel()
-
-	// Create the test workspace
-	workspace := test.NewTestWorkspace(OfType(CamelWorkspaceType))
-
-	// Create a namespace
-	namespace := test.NewTestNamespace(InWorkspace[*corev1.Namespace](workspace))
-
-	// Create the Integration
-	integration := &camelv1.Integration{
-		ObjectMeta: metav1.ObjectMeta{
-			Name: "test",
-		},
+func Integration(t Test, namespace *corev1.Namespace, name string) func(g gomega.Gomega) *camelv1.Integration {
+	return func(g gomega.Gomega) *camelv1.Integration {
+		integration, err := t.Client().CamelV1().Integrations(namespace.Name).Get(Inside(t.Ctx(), namespace), name, metav1.GetOptions{})
+		g.Expect(err).NotTo(gomega.HaveOccurred())
+		return integration
 	}
-	_, err := test.Client().CamelV1().Integrations(namespace.Name).
-		Create(Inside(test.Ctx(), workspace), integration, metav1.CreateOptions{})
-	test.Expect(err).NotTo(HaveOccurred())
-
-	test.Eventually(Integration(test, namespace, integration.Name)).
-		Should(WithTransform(ConditionStatus(camelv1.IntegrationConditionReady), Equal(corev1.ConditionTrue)))
 }

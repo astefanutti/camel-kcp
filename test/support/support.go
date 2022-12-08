@@ -18,12 +18,16 @@ limitations under the License.
 package support
 
 import (
+	"context"
 	"os"
 	"time"
+
+	corev1 "k8s.io/api/core/v1"
 
 	"github.com/kcp-dev/logicalcluster/v2"
 
 	tenancyv1alpha1 "github.com/kcp-dev/kcp/pkg/apis/tenancy/v1alpha1"
+	tenancyv1beta1 "github.com/kcp-dev/kcp/pkg/apis/tenancy/v1beta1"
 )
 
 const (
@@ -46,4 +50,19 @@ func getEnvLogicalClusterName(key string, fallback logicalcluster.Name) logicalc
 		return fallback
 	}
 	return logicalcluster.New(value)
+}
+
+type inside interface {
+	*tenancyv1beta1.Workspace | *corev1.Namespace
+}
+
+func Inside[T inside](ctx context.Context, object T) context.Context {
+	switch o := any(object).(type) {
+	case *tenancyv1beta1.Workspace:
+		return logicalcluster.WithCluster(ctx, logicalcluster.From(o).Join(o.Name))
+	case *corev1.Namespace:
+		return logicalcluster.WithCluster(ctx, logicalcluster.From(o))
+	default:
+		return ctx
+	}
 }
