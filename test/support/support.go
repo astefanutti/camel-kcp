@@ -19,6 +19,7 @@ package support
 
 import (
 	"os"
+	"time"
 
 	"github.com/kcp-dev/logicalcluster/v2"
 
@@ -27,6 +28,10 @@ import (
 
 const (
 	testWorkspaceName = "TEST_WORKSPACE"
+
+	TestTimeoutShort  = 1 * time.Minute
+	TestTimeoutMedium = 2 * time.Minute
+	TestTimeoutLong   = 5 * time.Minute
 )
 
 var (

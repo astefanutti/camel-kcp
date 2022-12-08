@@ -103,7 +103,7 @@ func (t *T) NewTestWorkspace(options ...Option[*tenancyv1beta1.Workspace]) *tena
 		deleteTestWorkspace(t, workspace)
 	})
 	t.T().Logf("Creating workspace %v:%v", TestWorkspace, workspace.Name)
-	t.Eventually(Workspace(t, workspace.Name)).
+	t.Eventually(Workspace(t, workspace.Name), TestTimeoutShort).
 		Should(gomega.WithTransform(WorkspacePhase, gomega.Equal(tenancyv1alpha1.ClusterWorkspacePhaseReady)))
 	return workspace
 }
