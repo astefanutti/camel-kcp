@@ -51,7 +51,6 @@ KCP_LOG_FILE="${TEMP_DIR}"/kcp.log
 
 KIND_CLUSTER_PREFIX="kcp-cluster-"
 KCP_CONTROL_CLUSTER_NAME="${KIND_CLUSTER_PREFIX}control"
-ORG_WORKSPACE=root:camel-k
 
 : ${KCP_VERSION:="main"}
 KCP_SYNCER_IMAGE="ghcr.io/kcp-dev/kcp/syncer:${KCP_VERSION}"
@@ -155,17 +154,15 @@ echo "Waiting for kcp server to be ready..."
 wait_for "grep 'Bootstrapped ClusterWorkspaceShard root|root' ${KCP_LOG_FILE}" "kcp" "1m" "5"
 sleep 5
 
-${KUBECTL_KCP_BIN} workspace use "root"
+${KUBECTL_KCP_BIN} workspace use root
 
-# Install Camel K cluster workspace type
-${KUSTOMIZE_BIN} fn run config/kcp --image gcr.io/kpt-fn/apply-setters:v0.2.0 -- \
-camel-kcp-export-path="root:camel-k:camel-kcp"
+# Install camel-k cluster workspace type
 ${KUSTOMIZE_BIN} build config/kcp/workspace_type | kubectl apply --server-side -f -
 
 # Get root scheduling APIExport identity hash
 schedulingIdentityHash=$(kubectl get apiexport scheduling.kcp.dev -o json | jq -r .status.identityHash)
 
-${KUBECTL_KCP_BIN} workspace use "root:compute"
+${KUBECTL_KCP_BIN} workspace use root:compute
 
 # Get root compute APIExport identity hash
 kubernetesIdentityHash=$(kubectl get apiexport kubernetes -o json | jq -r .status.identityHash)
@@ -201,12 +198,9 @@ subjects:
     name: system:authenticated
 EOF
 
-${KUBECTL_KCP_BIN} workspace use "root"
-${KUBECTL_KCP_BIN} workspace create "camel-k" --type universal --enter || ${KUBECTL_KCP_BIN} workspace use "camel-k"
-
-# Create control workspace
-${KUBECTL_KCP_BIN} workspace use "${ORG_WORKSPACE}"
-${KUBECTL_KCP_BIN} workspace create "camel-kcp" --enter || ${KUBECTL_KCP_BIN} workspace use "camel-kcp"
+# Create service workspace
+${KUBECTL_KCP_BIN} workspace use root
+${KUBECTL_KCP_BIN} workspace create camel-k --type universal --enter || ${KUBECTL_KCP_BIN} workspace use camel-k
 
 # Bind root compute APIExport
 ${KUBECTL_KCP_BIN} bind apiexport root:compute:kubernetes --name kubernetes

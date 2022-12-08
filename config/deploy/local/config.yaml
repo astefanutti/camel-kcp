@@ -16,7 +16,7 @@ service:
       metadata:
         name: default
       spec:
-        locationWorkspace: root:camel-k:camel-kcp
+        locationWorkspace: root:camel-k
         locationResource:
           group: workload.kcp.dev
           resource: synctargets
