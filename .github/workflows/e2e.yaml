@@ -87,7 +87,7 @@ jobs:
         run: |
           docker run -d --restart=always -p 5000:5000 --name registry registry:2.8.1
 
-          export REGISTRY_ADDRESS=$(ip -4 addr | grep 'state UP' -A2 | tail -n1 | awk '{print $2}' | cut -f1 -d'/'):5000
+          export REGISTRY_ADDRESS=$(hostname -i):5000
           echo "REGISTRY_ADDRESS=${REGISTRY_ADDRESS}" >> $GITHUB_ENV
           echo "Container image registry started at ${REGISTRY_ADDRESS}"
 
