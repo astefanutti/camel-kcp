@@ -112,22 +112,22 @@ jobs:
       - name: Kubernetes KinD compute cluster
         uses: helm/kind-action@v1.4.0
         with:
-          cluster_name: kcp-compute-cluster
+          cluster_name: kcp-data-cluster
           #node_image: kindest/node:v1.21.1@sha256:fae9a58f17f18f06aeac9772ca8b5ac680ebbed985e266f711d936e91d113bad
           version: ${{ env.KIND_VERSION }}
           config: ${{ env.KIND_CONFIG_FILE }}
 
       - name: Info
         run: |
-          echo "Control cluster:"
+          echo "Control plane cluster:"
           kubectl --context kind-kcp-control-cluster cluster-info
           kubectl --context kind-kcp-control-cluster describe nodes
-          kind get kubeconfig --name kcp-control-cluster > ${{ env.TEMP_DIR }}/control.kubeconfig
+          kind get kubeconfig --name kcp-control-cluster > ${TEMP_DIR}/control.kubeconfig
 
-          echo "Compute cluster:"
-          kubectl --context kind-kcp-compute-cluster cluster-info
-          kubectl --context kind-kcp-compute-cluster describe nodes
-          kind get kubeconfig --name kcp-compute-cluster > ${{ env.TEMP_DIR }}/compute.kubeconfig
+          echo "Data plane cluster:"
+          kubectl --context kind-kcp-data-cluster cluster-info
+          kubectl --context kind-kcp-data-cluster describe nodes
+          kind get kubeconfig --name kcp-data-cluster > ${TEMP_DIR}/data.kubeconfig
 
       - name: Run kcp and camel-kcp
         run: |
@@ -207,7 +207,7 @@ jobs:
           # Create service workspace
           kubectl kcp ws create camel-k --enter
 
-          # Create control and compute plane locations
+          # Create control and data plane locations
           cat <<EOF | kubectl apply -f -
           apiVersion: scheduling.kcp.dev/v1alpha1
           kind: Location
@@ -230,9 +230,9 @@ jobs:
           apiVersion: scheduling.kcp.dev/v1alpha1
           kind: Location
           metadata:
-            name: compute
+            name: data
             labels:
-              org.apache.camel/compute-plane: ""
+              org.apache.camel/data-plane: ""
           spec:
             resource:
               group: workload.kcp.dev
@@ -240,7 +240,7 @@ jobs:
               version: v1alpha1
             instanceSelector:
               matchExpressions:
-                - key: org.apache.camel/compute-plane
+                - key: org.apache.camel/data-plane
                   operator: Exists
           EOF
 
@@ -252,9 +252,9 @@ jobs:
           kubectl label synctarget control "org.apache.camel/control-plane="
           kubectl wait --timeout=300s --for=condition=Ready=true synctarget control
 
-          kubectl kcp workload sync compute --kcp-namespace kcp-syncer --syncer-image=${KCP_SYNCER_IMAGE} -o - | kubectl --kubeconfig ${TEMP_DIR}/compute.kubeconfig apply --server-side -f -
-          kubectl label synctarget compute "org.apache.camel/compute-plane="
-          kubectl wait --timeout=300s --for=condition=Ready=true synctarget compute
+          kubectl kcp workload sync data --kcp-namespace kcp-syncer --syncer-image=${KCP_SYNCER_IMAGE} -o - | kubectl --kubeconfig ${TEMP_DIR}/data.kubeconfig apply --server-side -f -
+          kubectl label synctarget data "org.apache.camel/data-plane="
+          kubectl wait --timeout=300s --for=condition=Ready=true synctarget data
 
           # Install service APIs
           kustomize fn run config/kcp --image gcr.io/kpt-fn/apply-setters:v0.2.0 -- \
