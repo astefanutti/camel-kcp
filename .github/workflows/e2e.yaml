@@ -88,6 +88,7 @@ jobs:
           docker run -d --restart=always -p 5000:5000 --name registry registry:2.8.1
 
           export REGISTRY_ADDRESS=$(ip addr | grep 'state UP' -A2 | tail -n1 | awk '{print $2}' | cut -f1 -d'/'):5000
+          echo "REGISTRY_ADDRESS=${REGISTRY_ADDRESS}" >> $GITHUB_ENV
           echo "Container image registry started at ${REGISTRY_ADDRESS}"
 
           KIND_CONFIG_FILE=${{ env.TEMP_DIR }}/kind.yaml
@@ -265,8 +266,10 @@ jobs:
           CAMEL_KCP_LOG_FILE="${TEMP_DIR}"/camel-kcp.log
           echo "CAMEL_KCP_LOG_FILE=${CAMEL_KCP_LOG_FILE}" >> $GITHUB_ENV
 
+          kustomize fn run config/deploy/local --image gcr.io/kpt-fn/apply-setters:v0.2.0 -- registry-address=${REGISTRY_ADDRESS}
+
           echo "Starting camel-kcp, writing logs to ${CAMEL_KCP_LOG_FILE}"
-          camel-kcp > ${CAMEL_KCP_LOG_FILE} 2>&1 &
+          camel-kcp --config=config/deploy/local/config.yaml > ${CAMEL_KCP_LOG_FILE} 2>&1 &
           CAMEL_KCP_PID=$!
           echo "CAMEL_KCP_PID=${CAMEL_KCP_PID}" >> $GITHUB_ENV
 
