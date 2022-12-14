@@ -310,7 +310,7 @@ func isAPIExportReady(apiExport *apisv1alpha1.APIExport) bool {
 	return true
 }
 
-func kcpAPIsGroupPresent(discoveryClient discovery.DiscoveryInterface) bool {
+func kcpAPIsGroupPresent(discoveryClient discovery.ServerGroupsInterface) bool {
 	apiGroupList, err := discoveryClient.ServerGroups()
 	exitOnError(err, "failed to get server groups")
 
