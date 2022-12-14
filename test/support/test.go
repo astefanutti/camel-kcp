@@ -56,6 +56,7 @@ func (o errorOption[T]) applyTo(to T) error {
 var _ Option[any] = errorOption[any](nil)
 
 func With(t *testing.T) Test {
+	t.Helper()
 	ctx := context.Background()
 	if deadline, ok := t.Deadline(); ok {
 		withDeadline, cancel := context.WithDeadline(ctx, deadline)
