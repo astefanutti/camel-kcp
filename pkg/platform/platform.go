@@ -23,7 +23,7 @@ const (
 	DefaultPlatformName  = platform.DefaultPlatformName
 	DefaultNamespaceName = "camel-k"
 
-	// OperatorNamespaceEnvVariable must equals that of github.com/apache/camel-k/pkg/platform package
+	// OperatorNamespaceEnvVariable must equals that of github.com/apache/camel-k/pkg/platform package.
 	OperatorNamespaceEnvVariable = "NAMESPACE"
 )
 

@@ -76,7 +76,7 @@ type ofType struct {
 var _ Option[*tenancyv1beta1.Workspace] = &ofType{}
 
 // nolint: unused
-// to be removed when the false-positivity is fixed
+// To be removed when the false-positivity is fixed.
 func (o *ofType) applyTo(to *tenancyv1beta1.Workspace) error {
 	to.Spec.Type = o.workspaceTypeReference
 	return nil
