@@ -22,11 +22,30 @@ run:
 linters:
   enable-all: true
   disable:
+    - cyclop
     - deadcode
+    - exhaustive
+    - exhaustivestruct
+    - exhaustruct
     - funlen
+    - gochecknoglobals
     - gochecknoinits
     - gci
     - godox
+    - goerr113
+    - gofumpt
+    - gomnd
+    - gomoddirectives
+    - ireturn
+    - lll
+    - nestif
+    - nolintlint
+    - nlreturn
+    - paralleltest
+    - testpackage
+    - varnamelen
+    - wrapcheck
+    - wsl
 
 linters-settings:
   goconst:
