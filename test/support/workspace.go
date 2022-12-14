@@ -56,7 +56,7 @@ type inWorkspace[T metav1.Object] struct {
 var _ Option[metav1.Object] = &inWorkspace[metav1.Object]{}
 
 // nolint: unused
-// to be removed when the false-positivity is fixed
+// To be removed when the false-positivity is fixed.
 func (o *inWorkspace[T]) applyTo(to T) error {
 	to.SetAnnotations(map[string]string{
 		logicalcluster.AnnotationKey: o.workspace.String(),
