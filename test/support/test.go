@@ -72,7 +72,8 @@ func With(t *testing.T) Test {
 
 type T struct {
 	*gomega.WithT
-	t      *testing.T
+	t *testing.T
+	// nolint: containedctx
 	ctx    context.Context
 	client Client
 	once   sync.Once
