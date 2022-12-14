@@ -212,24 +212,6 @@ cat <<EOF | kubectl apply -f -
 apiVersion: scheduling.kcp.dev/v1alpha1
 kind: Location
 metadata:
-  name: data
-  labels:
-    org.apache.camel/data-plane: ""
-spec:
-  resource:
-    group: workload.kcp.dev
-    resource: synctargets
-    version: v1alpha1
-  instanceSelector:
-    matchExpressions:
-    - key: org.apache.camel/data-plane
-      operator: Exists
-EOF
-
-cat <<EOF | kubectl apply -f -
-apiVersion: scheduling.kcp.dev/v1alpha1
-kind: Location
-metadata:
   name: control
   labels:
     org.apache.camel/control-plane: ""
@@ -241,6 +223,24 @@ spec:
   instanceSelector:
     matchExpressions:
     - key: org.apache.camel/control-plane
+      operator: Exists
+EOF
+
+cat <<EOF | kubectl apply -f -
+apiVersion: scheduling.kcp.dev/v1alpha1
+kind: Location
+metadata:
+  name: data
+  labels:
+    org.apache.camel/data-plane: ""
+spec:
+  resource:
+    group: workload.kcp.dev
+    resource: synctargets
+    version: v1alpha1
+  instanceSelector:
+    matchExpressions:
+    - key: org.apache.camel/data-plane
       operator: Exists
 EOF
 
