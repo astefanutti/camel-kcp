@@ -24,7 +24,9 @@ linters:
   disable:
     - deadcode
     - funlen
+    - gochecknoinits
     - gci
+    - godox
 
 linters-settings:
   goconst:
