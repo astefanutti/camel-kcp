@@ -124,15 +124,15 @@ func deleteTestWorkspace(t Test, workspace *tenancyv1beta1.Workspace) {
 	t.Expect(err).NotTo(gomega.HaveOccurred())
 }
 
-func HasImportedAPIs(t Test, workspace *tenancyv1beta1.Workspace, GVKs ...schema.GroupVersionKind) func(g gomega.Gomega) bool {
+func HasImportedAPIs(t Test, workspace *tenancyv1beta1.Workspace, gvks ...schema.GroupVersionKind) func(g gomega.Gomega) bool {
 	return func(g gomega.Gomega) bool {
 		// Get the logical cluster for the workspace
 		logicalCluster := logicalcluster.From(workspace).Join(workspace.Name)
 		discovery := t.Client().Core().Cluster(logicalCluster).Discovery()
 
-	GVKs:
-		for _, GKV := range GVKs {
-			resources, err := discovery.ServerResourcesForGroupVersion(GKV.GroupVersion().String())
+	loop:
+		for _, gvk := range gvks {
+			resources, err := discovery.ServerResourcesForGroupVersion(gvk.GroupVersion().String())
 			if err != nil {
 				if errors.IsNotFound(err) {
 					return false
@@ -140,8 +140,8 @@ func HasImportedAPIs(t Test, workspace *tenancyv1beta1.Workspace, GVKs ...schema
 				g.Expect(err).NotTo(gomega.HaveOccurred())
 			}
 			for _, resource := range resources.APIResources {
-				if resource.Kind == GKV.Kind {
-					continue GVKs
+				if resource.Kind == gvk.Kind {
+					continue loop
 				}
 			}
 			return false
