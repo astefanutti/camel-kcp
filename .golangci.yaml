@@ -21,6 +21,10 @@ run:
 
 linters:
   enable-all: true
+  disable:
+    - deadcode
+    - funlen
+    - gci
 
 linters-settings:
   goconst:
