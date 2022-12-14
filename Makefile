@@ -13,7 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-KCP_BRANCH := main
+KCP_BRANCH := v0.10.0
 NUM_CLUSTERS := 1
 
 IMAGE_NAME ?= camel-kcp
