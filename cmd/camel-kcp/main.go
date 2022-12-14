@@ -31,6 +31,10 @@ import (
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 
+	// Import all Kubernetes client auth plugins (e.g. Azure, GCP, OIDC, etc.)
+	// to ensure that exec-entrypoint and run can make use of them.
+	_ "k8s.io/client-go/plugin/pkg/client/auth"
+
 	appsv1 "k8s.io/api/apps/v1"
 	batchv1 "k8s.io/api/batch/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -46,9 +50,7 @@ import (
 	"k8s.io/client-go/tools/record"
 	retrywatch "k8s.io/client-go/tools/watch"
 	"k8s.io/utils/pointer"
-	// Import all Kubernetes client auth plugins (e.g. Azure, GCP, OIDC, etc.)
-	// to ensure that exec-entrypoint and run can make use of them.
-	_ "k8s.io/client-go/plugin/pkg/client/auth"
+
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/leaderelection/resourcelock"
 	configv1alpha1 "k8s.io/component-base/config/v1alpha1"
