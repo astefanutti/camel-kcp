@@ -33,7 +33,6 @@ type conditionType interface {
 func ConditionStatus[T conditionType](conditionType T) func(any) corev1.ConditionStatus {
 	return func(object any) corev1.ConditionStatus {
 		switch o := object.(type) {
-
 		case conditionsutil.Getter:
 			if c := conditionsutil.Get(o, conditionsapi.ConditionType(conditionType)); c != nil {
 				return c.Status
