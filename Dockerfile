@@ -13,8 +13,6 @@
 # Build the binary
 FROM --platform=${BUILDPLATFORM} golang:1.18 AS builder
 
-ARG TARGETARCH
-
 WORKDIR /workspace
 
 # Copy the Go Modules manifests
@@ -46,7 +44,11 @@ COPY camel-k/ camel-k/
 
 COPY Makefile Makefile
 RUN mkdir bin
-RUN make GOARCH=${TARGETARCH} build
+
+ARG TARGETOS
+ARG TARGETARCH
+
+RUN make GOOS=${TARGETOS} GOARCH=${TARGETARCH} build
 
 FROM adoptopenjdk/openjdk11:slim
 
