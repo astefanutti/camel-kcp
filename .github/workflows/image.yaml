@@ -35,12 +35,12 @@ jobs:
     runs-on: ubuntu-20.04
     outputs:
       sha_short: ${{ env.sha_short }}
-      strategy:
-        matrix:
-          platforms:
-            - linux/amd64
-            - linux/arm64
-            - linux/ppc64le
+    strategy:
+      matrix:
+        platforms:
+          - linux/amd64
+          - linux/arm64
+          - linux/ppc64le
     steps:
       - uses: actions/checkout@v3
         with:
