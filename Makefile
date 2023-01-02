@@ -34,6 +34,9 @@ SHELL = /usr/bin/env bash
 MAKEFLAGS += --warn-undefined-variables
 MAKEFLAGS += --no-builtin-rules
 
+ARCH := $(shell go env GOARCH)
+OS := $(shell go env GOOS)
+
 .PHONY: all
 all: build
 
@@ -83,7 +86,7 @@ test: ## Run tests
 
 .PHONY: build
 build: ## Build the project
-	go build -o bin ./cmd/...
+	GOOS=$(OS) GOARCH=$(ARCH) go build -o bin ./cmd/...
 
 .PHONY: build-image
 build-image: ## Build container image
