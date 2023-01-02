@@ -83,5 +83,3 @@ jobs:
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
           platforms: linux/amd64,linux/arm64,linux/ppc64le
-          cache-from: type=gha,scope=${{ github.ref_name }}
-          cache-to: type=gha,scope=${{ github.ref_name }},mode=max
