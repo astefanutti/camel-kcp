@@ -86,7 +86,7 @@ test: ## Run tests
 
 .PHONY: build
 build: ## Build the project
-	GOOS=$(OS) GOARCH=$(ARCH) go build -o bin ./cmd/...
+	GOOS=$(OS) GOARCH=$(ARCH) CGO_ENABLED=0 go build -o bin ./cmd/...
 
 .PHONY: build-image
 build-image: ## Build container image

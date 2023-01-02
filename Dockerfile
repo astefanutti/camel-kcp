@@ -44,7 +44,7 @@ COPY camel-k/ camel-k/
 
 COPY Makefile Makefile
 RUN mkdir bin
-RUN CGO_ENABLED=0 make build
+RUN make build
 
 FROM adoptopenjdk/openjdk11:slim
 
