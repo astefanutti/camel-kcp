@@ -11,7 +11,9 @@
 # limitations under the License.
 
 # Build the binary
-FROM golang:1.18 AS builder
+FROM --platform=${BUILDPLATFORM} golang:1.18 AS builder
+
+ARG TARGETARCH
 
 WORKDIR /workspace
 
@@ -44,7 +46,7 @@ COPY camel-k/ camel-k/
 
 COPY Makefile Makefile
 RUN mkdir bin
-RUN make build
+RUN make GOARCH=${TARGETARCH} build
 
 FROM adoptopenjdk/openjdk11:slim
 
