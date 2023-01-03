@@ -33,8 +33,6 @@ jobs:
     if: github.repository_owner == 'astefanutti'
     name: build
     runs-on: ubuntu-20.04
-    outputs:
-      sha_short: ${{ env.sha_short }}
 
     steps:
       - uses: actions/checkout@v3
@@ -42,11 +40,6 @@ jobs:
           submodules: recursive
 
       - run: cd camel-k && make clean maven-overlay bundle-kamelets
-
-      - name: Get the short SHA
-        id: vars
-        run: |
-          echo "sha_short=$(echo ${{ github.sha }} | cut -b -7)" >> $GITHUB_ENV
 
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v2
@@ -72,7 +65,7 @@ jobs:
           tags: |
             type=ref,event=branch
             type=ref,event=tag
-            type=raw,value=${{ env.sha_short }}
+            type=sha
             type=raw,value=latest,enable={{is_default_branch}}
 
       - name: Build and push
