@@ -24,8 +24,10 @@ import (
 
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/utils/pointer"
 
 	camelv1 "github.com/apache/camel-k/pkg/apis/camel/v1"
+	traitv1 "github.com/apache/camel-k/pkg/apis/camel/v1/trait"
 
 	. "github.com/apache/camel-kcp/test/support"
 )
@@ -44,6 +46,27 @@ func TestIntegration(t *testing.T) {
 	integration := &camelv1.Integration{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "test",
+		},
+		Spec: camelv1.IntegrationSpec{
+			Flows: []camelv1.Flow{
+				{
+					camelv1.RawMessage(`
+from:
+  uri: platform-http:/hello
+  steps:
+    - transform:
+        simple: Happy e2e testing!
+    - to: log:info
+`),
+				},
+			},
+			Traits: camelv1.Traits{
+				Health: &traitv1.HealthTrait{
+					Trait: traitv1.Trait{
+						Enabled: pointer.Bool(true),
+					},
+				},
+			},
 		},
 	}
 	_, err := test.Client().CamelV1().Integrations(namespace.Name).
