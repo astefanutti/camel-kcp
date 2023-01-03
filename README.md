@@ -1,6 +1,6 @@
 # camel-kcp
 
-[Camel K](https://github.com/apapche/camel-k) on [kcp](https://github.com/kcp-dev/kcp).
+[Camel K](https://github.com/apache/camel-k) on [kcp](https://github.com/kcp-dev/kcp).
 
 # Testing
 
