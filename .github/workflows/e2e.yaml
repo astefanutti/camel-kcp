@@ -105,7 +105,6 @@ jobs:
         uses: helm/kind-action@v1.4.0
         with:
           cluster_name: kcp-control-cluster
-          #node_image: kindest/node:v1.21.1@sha256:fae9a58f17f18f06aeac9772ca8b5ac680ebbed985e266f711d936e91d113bad
           version: ${{ env.KIND_VERSION }}
           config: ${{ env.KIND_CONFIG_FILE }}
 
@@ -113,7 +112,6 @@ jobs:
         uses: helm/kind-action@v1.4.0
         with:
           cluster_name: kcp-data-cluster
-          #node_image: kindest/node:v1.21.1@sha256:fae9a58f17f18f06aeac9772ca8b5ac680ebbed985e266f711d936e91d113bad
           version: ${{ env.KIND_VERSION }}
           config: ${{ env.KIND_CONFIG_FILE }}
 
