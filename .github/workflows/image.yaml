@@ -33,9 +33,9 @@ on:
       - 'release-*'
 
 jobs:
-  build:
+  buildx:
     if: github.repository_owner == 'astefanutti'
-    name: build
+    name: buildx
     runs-on: ubuntu-20.04
 
     steps:
