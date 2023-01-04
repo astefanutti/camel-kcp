@@ -27,6 +27,7 @@ import (
 )
 
 func createTestNamespace(t Test, options ...Option[*corev1.Namespace]) *corev1.Namespace {
+	t.T().Helper()
 	namespace := &corev1.Namespace{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: corev1.SchemeGroupVersion.String(),
@@ -48,6 +49,7 @@ func createTestNamespace(t Test, options ...Option[*corev1.Namespace]) *corev1.N
 }
 
 func deleteTestNamespace(t Test, namespace *corev1.Namespace) {
+	t.T().Helper()
 	propagationPolicy := metav1.DeletePropagationBackground
 	err := t.Client().Core().Cluster(logicalcluster.From(namespace)).CoreV1().Namespaces().Delete(t.Ctx(), namespace.Name, metav1.DeleteOptions{
 		PropagationPolicy: &propagationPolicy,

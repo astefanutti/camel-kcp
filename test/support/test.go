@@ -100,6 +100,7 @@ func (t *T) Client() Client {
 }
 
 func (t *T) NewTestWorkspace(options ...Option[*tenancyv1beta1.Workspace]) *tenancyv1beta1.Workspace {
+	t.T().Helper()
 	workspace := createTestWorkspace(t, options...)
 	t.T().Cleanup(func() {
 		deleteTestWorkspace(t, workspace)
@@ -111,6 +112,7 @@ func (t *T) NewTestWorkspace(options ...Option[*tenancyv1beta1.Workspace]) *tena
 }
 
 func (t *T) NewTestNamespace(options ...Option[*corev1.Namespace]) *corev1.Namespace {
+	t.T().Helper()
 	namespace := createTestNamespace(t, options...)
 	t.T().Cleanup(func() {
 		deleteTestNamespace(t, namespace)
