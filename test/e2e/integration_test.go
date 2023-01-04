@@ -49,8 +49,7 @@ func TestIntegration(t *testing.T) {
 		},
 		Spec: camelv1.IntegrationSpec{
 			Flows: []camelv1.Flow{
-				{
-					camelv1.RawMessage(`
+				Flow(test, `
 from:
   uri: platform-http:/hello
   steps:
@@ -58,7 +57,6 @@ from:
         simple: Happy e2e testing!
     - to: log:info
 `),
-				},
 			},
 			Traits: camelv1.Traits{
 				Health: &traitv1.HealthTrait{
@@ -69,6 +67,7 @@ from:
 			},
 		},
 	}
+
 	_, err := test.Client().CamelV1().Integrations(namespace.Name).
 		Create(Inside(test.Ctx(), workspace), integration, metav1.CreateOptions{})
 	test.Expect(err).NotTo(HaveOccurred())
