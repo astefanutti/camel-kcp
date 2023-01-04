@@ -95,6 +95,7 @@ func WorkspacePhase(workspace *tenancyv1beta1.Workspace) tenancyv1alpha1.Cluster
 }
 
 func createTestWorkspace(t Test, options ...Option[*tenancyv1beta1.Workspace]) *tenancyv1beta1.Workspace {
+	t.T().Helper()
 	workspace := &tenancyv1beta1.Workspace{
 		ObjectMeta: metav1.ObjectMeta{
 			GenerateName: "test-ws-",
@@ -117,6 +118,7 @@ func createTestWorkspace(t Test, options ...Option[*tenancyv1beta1.Workspace]) *
 }
 
 func deleteTestWorkspace(t Test, workspace *tenancyv1beta1.Workspace) {
+	t.T().Helper()
 	propagationPolicy := metav1.DeletePropagationBackground
 	err := t.Client().Kcp().Cluster(logicalcluster.From(workspace)).TenancyV1beta1().Workspaces().Delete(t.Ctx(), workspace.Name, metav1.DeleteOptions{
 		PropagationPolicy: &propagationPolicy,
