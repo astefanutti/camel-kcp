@@ -51,8 +51,8 @@ jobs:
           only-new-issues: true
           args: --verbose --deadline 5m
 
-  test:
-    name: build
+  compile:
+    name: compile
     runs-on: ubuntu-20.04
     steps:
       - uses: actions/checkout@v3
