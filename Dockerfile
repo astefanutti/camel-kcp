@@ -48,7 +48,7 @@ RUN mkdir bin
 ARG TARGETOS
 ARG TARGETARCH
 
-RUN make GOOS=${TARGETOS} GOARCH=${TARGETARCH} build
+RUN make OS=${TARGETOS} ARCH=${TARGETARCH} build
 
 FROM adoptopenjdk/openjdk11:slim
 
