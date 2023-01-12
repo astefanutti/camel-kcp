@@ -18,7 +18,7 @@ limitations under the License.
 package support
 
 import (
-	"k8s.io/client-go/kubernetes"
+
 	// Import all Kubernetes client auth plugins (e.g. Azure, GCP, OIDC, etc.)
 	// to ensure that exec-entrypoint and run can make use of them.
 	_ "k8s.io/client-go/plugin/pkg/client/auth"
@@ -27,7 +27,9 @@ import (
 
 	"sigs.k8s.io/controller-runtime/pkg/kcp"
 
-	kcpclientset "github.com/kcp-dev/kcp/pkg/client/clientset/versioned"
+	"github.com/kcp-dev/client-go/kubernetes"
+
+	kcpclientset "github.com/kcp-dev/kcp/pkg/client/clientset/versioned/cluster"
 
 	camel "github.com/apache/camel-k/pkg/client/camel/clientset/versioned"
 	camelv1 "github.com/apache/camel-k/pkg/client/camel/clientset/versioned/typed/camel/v1"
@@ -80,12 +82,12 @@ func newTestClient() (Client, error) {
 		return nil, err
 	}
 
-	kubeClient, err := kubernetes.NewClusterForConfig(cfg)
+	kubeClient, err := kubernetes.NewForConfig(cfg)
 	if err != nil {
 		return nil, err
 	}
 
-	kcpClient, err := kcpclientset.NewClusterForConfig(cfg)
+	kcpClient, err := kcpclientset.NewForConfig(cfg)
 	if err != nil {
 		return nil, err
 	}
