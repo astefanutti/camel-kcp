@@ -6,6 +6,7 @@ require (
 	github.com/apache/camel-k v1.11.0
 	github.com/apache/camel-k/pkg/apis/camel v1.11.0
 	github.com/apache/camel-k/pkg/client/camel v1.11.0
+	github.com/kcp-dev/client-go v0.0.0-20221116175613-517d8c8ead79
 	github.com/kcp-dev/kcp v0.10.0
 	github.com/kcp-dev/kcp/pkg/apis v0.10.0
 	github.com/kcp-dev/logicalcluster/v2 v2.0.0-alpha.4
@@ -159,13 +160,16 @@ replace (
 )
 
 replace (
-	k8s.io/cloud-provider => k8s.io/cloud-provider v0.0.0-20221208163042-f7f1c9288c3b
-	k8s.io/controller-manager => k8s.io/controller-manager v0.0.0-20221208163042-f7f1c9288c3b
-	k8s.io/kube-aggregator => k8s.io/kube-aggregator v0.0.0-20221208163042-f7f1c9288c3b
-	k8s.io/kube-controller-manager => k8s.io/kube-controller-manager v0.0.0-20221208163042-f7f1c9288c3b
-	k8s.io/kubelet => k8s.io/kubelet v0.0.0-20221208163042-f7f1c9288c3b
-	k8s.io/mount-utils => k8s.io/mount-utils v0.0.0-20221208163042-f7f1c9288c3b
-	k8s.io/pod-security-admission => k8s.io/pod-security-admission v0.0.0-20221208163042-f7f1c9288c3b
+	k8s.io/api => github.com/kcp-dev/kubernetes/staging/src/k8s.io/api v0.0.0-20221208163042-f7f1c9288c3b
+	k8s.io/apimachinery => github.com/kcp-dev/kubernetes/staging/src/k8s.io/apimachinery v0.0.0-20221208163042-f7f1c9288c3b
+	k8s.io/client-go => github.com/kcp-dev/kubernetes/staging/src/k8s.io/client-go v0.0.0-20221208163042-f7f1c9288c3b
+	k8s.io/cloud-provider => github.com/kcp-dev/kubernetes/staging/src/k8s.io/cloud-provider v0.0.0-20221208163042-f7f1c9288c3b
+	k8s.io/controller-manager => github.com/kcp-dev/kubernetes/staging/src/k8s.io/controller-manager v0.0.0-20221208163042-f7f1c9288c3b
+	k8s.io/kube-aggregator => github.com/kcp-dev/kubernetes/staging/src/k8s.io/kube-aggregator v0.0.0-20221208163042-f7f1c9288c3b
+	k8s.io/kube-controller-manager => github.com/kcp-dev/kubernetes/staging/src/k8s.io/kube-controller-manager v0.0.0-20221208163042-f7f1c9288c3b
+	k8s.io/kubelet => github.com/kcp-dev/kubernetes/staging/src/k8s.io/kubelet v0.0.0-20221208163042-f7f1c9288c3b
+	k8s.io/mount-utils => github.com/kcp-dev/kubernetes/staging/src/k8s.io/mount-utils v0.0.0-20221208163042-f7f1c9288c3b
+	k8s.io/pod-security-admission => github.com/kcp-dev/kubernetes/staging/src/k8s.io/pod-security-admission v0.0.0-20221208163042-f7f1c9288c3b
 )
 
 // Using a fork that removes the HTTPS ping before using HTTP for insecure registries (for Spectrum)
