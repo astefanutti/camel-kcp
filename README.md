@@ -43,10 +43,10 @@ $ make local-deploy
 
 Once camel-kcp is running, you can exercise it using one of the methods below.
 
-It is recommended to install the kcp plugin, by running the following command once:
+It is recommended to use the version of the kcp plugin that's been built during [setup](#Setup), which can be achieved by running:
 
 ```console
-$ go install ./cmd/kubectl-kcp
+$ export PATH="$(pwd)/bin:$PATH"
 ```
 
 And to switch to using the `user` context and workspace, by running:
