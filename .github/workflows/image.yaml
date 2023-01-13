@@ -27,10 +27,18 @@ on:
       - 'release-*'
     tags:
       - 'v*'
+    paths-ignore:
+      - '**.adoc'
+      - '**.md'
+      - 'LICENSE'
   pull_request:
     branches:
       - main
       - 'release-*'
+    paths-ignore:
+      - '**.adoc'
+      - '**.md'
+      - 'LICENSE'
 
 jobs:
   buildx:
