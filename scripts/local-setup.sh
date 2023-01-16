@@ -151,7 +151,7 @@ if ! ps -p ${KCP_PID}; then
 fi
 
 echo "Waiting for kcp server to be ready..."
-wait_for "grep 'Bootstrapped ClusterWorkspaceShard root|root' ${KCP_LOG_FILE}" "kcp" "1m" "5"
+wait_for "grep 'finished bootstrapping root compute workspace' ${KCP_LOG_FILE}" "kcp" "1m" "5"
 sleep 5
 
 ${KUBECTL_KCP_BIN} workspace use root
