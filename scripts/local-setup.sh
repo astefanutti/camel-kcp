@@ -168,7 +168,7 @@ ${KUBECTL_KCP_BIN} workspace use root:compute
 kubernetesIdentityHash=$(kubectl get apiexport kubernetes -o json | jq -r .status.identityHash)
 
 # Grant authenticated users permission to bind the root compute APIExport
-# To be removed when https://github.com/kcp-dev/kcp/pull/2474 lands
+# To be removed when https://github.com/kcp-dev/kcp/pull/2618 lands
 cat <<EOF | kubectl apply -f -
 ---
 apiVersion: rbac.authorization.k8s.io/v1
