@@ -18,13 +18,17 @@ limitations under the License.
 package support
 
 import (
+	"encoding/json"
+
 	"github.com/onsi/gomega"
+
 	"sigs.k8s.io/yaml"
 
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	camelv1 "github.com/apache/camel-k/pkg/apis/camel/v1"
+	camelv1alpha1 "github.com/apache/camel-k/pkg/apis/camel/v1alpha1"
 )
 
 func Integration(t Test, namespace *corev1.Namespace, name string) func(g gomega.Gomega) *camelv1.Integration {
@@ -35,11 +39,32 @@ func Integration(t Test, namespace *corev1.Namespace, name string) func(g gomega
 	}
 }
 
+func KameletBinding(t Test, namespace *corev1.Namespace, name string) func(g gomega.Gomega) *camelv1alpha1.KameletBinding {
+	return func(g gomega.Gomega) *camelv1alpha1.KameletBinding {
+		binding, err := t.Client().CamelV1alpha1().KameletBindings(namespace.Name).Get(Inside(t.Ctx(), namespace), name, metav1.GetOptions{})
+		g.Expect(err).NotTo(gomega.HaveOccurred())
+		return binding
+	}
+}
+
+func KameletBindingPhase(binding *camelv1alpha1.KameletBinding) camelv1alpha1.KameletBindingPhase {
+	return binding.Status.Phase
+}
+
 func Flow(t Test, f string) camelv1.Flow {
 	t.T().Helper()
-	json, err := yaml.YAMLToJSON([]byte(f))
+	data, err := yaml.YAMLToJSON([]byte(f))
 	t.Expect(err).NotTo(gomega.HaveOccurred())
 	return camelv1.Flow{
-		RawMessage: camelv1.RawMessage(json),
+		RawMessage: camelv1.RawMessage(data),
+	}
+}
+
+func EndpointProperties(t Test, properties map[string]string) *camelv1alpha1.EndpointProperties {
+	t.T().Helper()
+	data, err := json.Marshal(properties)
+	t.Expect(err).NotTo(gomega.HaveOccurred())
+	return &camelv1alpha1.EndpointProperties{
+		RawMessage: data,
 	}
 }
