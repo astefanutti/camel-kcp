@@ -71,5 +71,8 @@ func TestKameletBinding(t *testing.T) {
 	test.Expect(err).NotTo(HaveOccurred())
 
 	test.Eventually(KameletBinding(test, namespace, binding.Name), TestTimeoutMedium).
-		Should(WithTransform(KameletBindingPhase, Equal(camelv1alpha1.KameletBindingPhaseReady)))
+		Should(And(
+			WithTransform(KameletBindingPhase, Equal(camelv1alpha1.KameletBindingPhaseReady)),
+			WithTransform(ConditionStatus(camelv1alpha1.KameletBindingConditionReady), Equal(corev1.ConditionTrue)),
+		))
 }
