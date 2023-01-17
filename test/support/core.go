@@ -24,6 +24,7 @@ import (
 	conditionsutil "github.com/kcp-dev/kcp/pkg/apis/third_party/conditions/util/conditions"
 
 	camelv1 "github.com/apache/camel-k/pkg/apis/camel/v1"
+	camelv1alpha1 "github.com/apache/camel-k/pkg/apis/camel/v1alpha1"
 )
 
 type conditionType interface {
@@ -40,6 +41,11 @@ func ConditionStatus[T conditionType](conditionType T) func(any) corev1.Conditio
 
 		case *camelv1.Integration:
 			if c := o.Status.GetCondition(camelv1.IntegrationConditionType(conditionType)); c != nil {
+				return c.Status
+			}
+
+		case *camelv1alpha1.KameletBinding:
+			if c := o.Status.GetCondition(camelv1alpha1.KameletBindingConditionType(conditionType)); c != nil {
 				return c.Status
 			}
 		}
