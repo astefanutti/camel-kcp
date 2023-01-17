@@ -260,6 +260,10 @@ jobs:
           scheduling-identity-hash="${SCHEDULING_IDENTITY_HASH}"
           kustomize build config/kcp | kubectl apply --server-side -f -
 
+          # Install Kamelets
+          (cd camel-k && make bundle-kamelets)
+          export KAMELET_CATALOG_DIR=./camel-k/build/_kamelets
+
           # Start camel-kcp
           CAMEL_KCP_LOG_FILE="${TEMP_DIR}"/camel-kcp.log
           echo "CAMEL_KCP_LOG_FILE=${CAMEL_KCP_LOG_FILE}" >> $GITHUB_ENV
