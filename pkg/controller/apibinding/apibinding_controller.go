@@ -38,7 +38,7 @@ import (
 	apisv1alpha1 "github.com/kcp-dev/kcp/pkg/apis/apis/v1alpha1"
 	schedulingv1alpha1 "github.com/kcp-dev/kcp/pkg/apis/scheduling/v1alpha1"
 
-	v1 "github.com/apache/camel-k/pkg/apis/camel/v1"
+	camelv1 "github.com/apache/camel-k/pkg/apis/camel/v1"
 	"github.com/apache/camel-k/pkg/util/monitoring"
 
 	"github.com/apache/camel-kcp/pkg/client"
@@ -51,12 +51,19 @@ func Add(mgr manager.Manager, c client.Client, cfg *config.ServiceConfiguration)
 		Named("apibinding-controller").
 		For(&apisv1alpha1.APIBinding{}, builder.WithPredicates(
 			predicate.Funcs{
+				// TODO: Is it needed to check whether the binding workspace is being terminated?
 				UpdateFunc: func(e event.UpdateEvent) bool {
 					binding, ok := e.ObjectNew.(*apisv1alpha1.APIBinding)
 					if !ok {
 						return false
 					}
+					if binding.DeletionTimestamp != nil && !binding.DeletionTimestamp.IsZero() {
+						return false
+					}
 					return binding.Status.Phase == apisv1alpha1.APIBindingPhaseBound
+				},
+				DeleteFunc: func(deleteEvent event.DeleteEvent) bool {
+					return false
 				},
 			})).
 		Complete(monitoring.NewInstrumentedReconciler(
@@ -146,7 +153,7 @@ func (r *reconciler) maybeCreateNamespace(ctx context.Context, name string) erro
 }
 
 func (r *reconciler) maybeCreatePlatform(ctx context.Context, platformConfig *config.IntegrationPlatform) error {
-	ip := &v1.IntegrationPlatform{
+	ip := &camelv1.IntegrationPlatform{
 		ObjectMeta: platformConfig.ObjectMeta,
 		Spec:       platformConfig.Spec,
 	}
