@@ -24,7 +24,7 @@ spec:
     - exportName: kubernetes
       path: root:compute
     - exportName: camel-kcp
-      path: root:camel-k # kpt-set: ${camel-kcp-export-path}
+      path: root:camel-k # kpt-set: ${camel-kcp-workspace}
   extend:
     with:
       - name: universal
