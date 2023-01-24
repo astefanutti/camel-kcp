@@ -23,7 +23,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
-	"github.com/kcp-dev/logicalcluster/v2"
+	"github.com/kcp-dev/logicalcluster/v3"
 )
 
 func createTestNamespace(t Test, options ...Option[*corev1.Namespace]) *corev1.Namespace {
@@ -42,7 +42,7 @@ func createTestNamespace(t Test, options ...Option[*corev1.Namespace]) *corev1.N
 		t.Expect(option.applyTo(namespace)).To(gomega.Succeed())
 	}
 
-	namespace, err := t.Client().Core().Cluster(logicalcluster.From(namespace)).CoreV1().Namespaces().Create(t.Ctx(), namespace, metav1.CreateOptions{})
+	namespace, err := t.Client().Core().Cluster(logicalcluster.From(namespace).Path()).CoreV1().Namespaces().Create(t.Ctx(), namespace, metav1.CreateOptions{})
 	t.Expect(err).NotTo(gomega.HaveOccurred())
 
 	return namespace
@@ -51,7 +51,7 @@ func createTestNamespace(t Test, options ...Option[*corev1.Namespace]) *corev1.N
 func deleteTestNamespace(t Test, namespace *corev1.Namespace) {
 	t.T().Helper()
 	propagationPolicy := metav1.DeletePropagationBackground
-	err := t.Client().Core().Cluster(logicalcluster.From(namespace)).CoreV1().Namespaces().Delete(t.Ctx(), namespace.Name, metav1.DeleteOptions{
+	err := t.Client().Core().Cluster(logicalcluster.From(namespace).Path()).CoreV1().Namespaces().Delete(t.Ctx(), namespace.Name, metav1.DeleteOptions{
 		PropagationPolicy: &propagationPolicy,
 	})
 	t.Expect(err).NotTo(gomega.HaveOccurred())
