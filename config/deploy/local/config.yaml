@@ -12,6 +12,7 @@ service:
           registry:
             address: REGISTRY_ADDRESS # kpt-set: ${registry-address}
             insecure: true
+          baseImage: eclipse-temurin:11 # TODO: Remove once upgrade to latest Camel K
     createDefaultPlacement:
       metadata:
         name: default
