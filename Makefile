@@ -13,7 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-KCP_BRANCH := v0.10.0
+KCP_BRANCH := main
 NUM_CLUSTERS := 1
 
 IMAGE_NAME ?= camel-kcp
@@ -112,6 +112,10 @@ deploy: kustomize ## Deploy controller to the K8s cluster (using $KUBECONFIG or 
 	cd config/manager && $(KUSTOMIZE) edit set image controller=${IMG}
 	$(KUSTOMIZE) build config/default | kubectl apply -f -
 
+.PHONY: undeploy
+undeploy: kustomize ## Undeploy controller from the K8s cluster (using $KUBECONFIG or ~/.kube/config)
+	$(KUSTOMIZE) build config/default | kubectl delete -f -
+
 .PHONY: local-deploy
 local-deploy: kustomize build-image ## Deploy controller to the local K8s cluster (using the local-setup.sh script)
 ifeq ($(shell uname -s 2>/dev/null || echo Unknown),Darwin)
@@ -123,10 +127,6 @@ endif
 	docker push $(registry_addr):5001/$(IMAGE_NAME)
 	$(KUSTOMIZE) fn run config/deploy/local --image gcr.io/kpt-fn/apply-setters:v0.2.0 -- registry-address=$(registry_addr):5001
 	$(KUSTOMIZE) build config/deploy/local | kubectl apply -f -
-
-.PHONY: undeploy
-undeploy: kustomize ## Undeploy controller from the K8s cluster (using $KUBECONFIG or ~/.kube/config)
-	$(KUSTOMIZE) build config/default | kubectl delete -f -
 
 ## Local Deployment
 

@@ -24,10 +24,9 @@ import (
 
 	corev1 "k8s.io/api/core/v1"
 
-	"github.com/kcp-dev/logicalcluster/v2"
+	"github.com/kcp-dev/logicalcluster/v3"
 
 	tenancyv1alpha1 "github.com/kcp-dev/kcp/pkg/apis/tenancy/v1alpha1"
-	tenancyv1beta1 "github.com/kcp-dev/kcp/pkg/apis/tenancy/v1beta1"
 )
 
 const (
@@ -39,27 +38,27 @@ const (
 )
 
 var (
-	TestWorkspace = getEnvLogicalClusterName(testWorkspaceName, logicalcluster.New("root:camel-kcp"))
+	TestWorkspace = getEnvLogicalClusterName(testWorkspaceName, logicalcluster.NewPath("root:camel-k"))
 
-	CamelWorkspaceType = tenancyv1alpha1.ClusterWorkspaceTypeReference{Name: "camel-k"}
+	CamelWorkspaceType = tenancyv1alpha1.WorkspaceTypeReference{Name: "camel-k"}
 )
 
-func getEnvLogicalClusterName(key string, fallback logicalcluster.Name) logicalcluster.Name {
+func getEnvLogicalClusterName(key string, fallback logicalcluster.Path) logicalcluster.Path {
 	value, found := os.LookupEnv(key)
 	if !found {
 		return fallback
 	}
-	return logicalcluster.New(value)
+	return logicalcluster.NewPath(value)
 }
 
 type inside interface {
-	*tenancyv1beta1.Workspace | *corev1.Namespace
+	*tenancyv1alpha1.Workspace | *corev1.Namespace
 }
 
 func Inside[T inside](ctx context.Context, object T) context.Context {
 	switch o := any(object).(type) {
-	case *tenancyv1beta1.Workspace:
-		return logicalcluster.WithCluster(ctx, logicalcluster.From(o).Join(o.Name))
+	case *tenancyv1alpha1.Workspace:
+		return logicalcluster.WithCluster(ctx, logicalcluster.Name(logicalcluster.From(o).Path().Join(o.Name).String()))
 	case *corev1.Namespace:
 		return logicalcluster.WithCluster(ctx, logicalcluster.From(o))
 	default:

@@ -27,7 +27,6 @@ import (
 	corev1 "k8s.io/api/core/v1"
 
 	tenancyv1alpha1 "github.com/kcp-dev/kcp/pkg/apis/tenancy/v1alpha1"
-	tenancyv1beta1 "github.com/kcp-dev/kcp/pkg/apis/tenancy/v1beta1"
 )
 
 type Test interface {
@@ -38,7 +37,7 @@ type Test interface {
 	gomega.Gomega
 
 	NewTestNamespace(...Option[*corev1.Namespace]) *corev1.Namespace
-	NewTestWorkspace(...Option[*tenancyv1beta1.Workspace]) *tenancyv1beta1.Workspace
+	NewTestWorkspace(...Option[*tenancyv1alpha1.Workspace]) *tenancyv1alpha1.Workspace
 }
 
 type Option[T any] interface {
@@ -99,7 +98,7 @@ func (t *T) Client() Client {
 	return t.client
 }
 
-func (t *T) NewTestWorkspace(options ...Option[*tenancyv1beta1.Workspace]) *tenancyv1beta1.Workspace {
+func (t *T) NewTestWorkspace(options ...Option[*tenancyv1alpha1.Workspace]) *tenancyv1alpha1.Workspace {
 	t.T().Helper()
 	workspace := createTestWorkspace(t, options...)
 	t.T().Cleanup(func() {
@@ -107,7 +106,7 @@ func (t *T) NewTestWorkspace(options ...Option[*tenancyv1beta1.Workspace]) *tena
 	})
 	t.T().Logf("Creating workspace %v:%v", TestWorkspace, workspace.Name)
 	t.Eventually(Workspace(t, workspace.Name), TestTimeoutShort).
-		Should(gomega.WithTransform(WorkspacePhase, gomega.Equal(tenancyv1alpha1.ClusterWorkspacePhaseReady)))
+		Should(gomega.WithTransform(WorkspacePhase, gomega.Equal(tenancyv1alpha1.WorkspaceInitialized)))
 	return workspace
 }
 
