@@ -19,7 +19,7 @@ service:
       spec:
         locationWorkspace: root:camel-k # kpt-set: ${camel-kcp-workspace}
         locationResource:
-          group: workload.kcp.dev
+          group: workload.kcp.io
           resource: synctargets
           version: v1alpha1
         namespaceSelector: {}

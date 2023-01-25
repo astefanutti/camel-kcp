@@ -220,7 +220,7 @@ metadata:
     org.apache.camel/control-plane: ""
 spec:
   resource:
-    group: workload.kcp.dev
+    group: workload.kcp.io
     resource: synctargets
     version: v1alpha1
   instanceSelector:
@@ -238,7 +238,7 @@ metadata:
     org.apache.camel/data-plane: ""
 spec:
   resource:
-    group: workload.kcp.dev
+    group: workload.kcp.io
     resource: synctargets
     version: v1alpha1
   instanceSelector:
