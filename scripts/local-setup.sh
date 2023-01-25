@@ -212,7 +212,7 @@ kubectl wait --timeout=300s --for=condition=Ready=true apibinding kubernetes
 
 # Create control and data plane locations
 cat <<EOF | kubectl apply -f -
-apiVersion: scheduling.kcp.dev/v1alpha1
+apiVersion: scheduling.kcp.io/v1alpha1
 kind: Location
 metadata:
   name: control
@@ -230,7 +230,7 @@ spec:
 EOF
 
 cat <<EOF | kubectl apply -f -
-apiVersion: scheduling.kcp.dev/v1alpha1
+apiVersion: scheduling.kcp.io/v1alpha1
 kind: Location
 metadata:
   name: data

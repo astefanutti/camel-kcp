@@ -53,7 +53,7 @@ spec:
     resource: ingresses
     all: true
     identityHash: IDENTITY_HASH # kpt-set: ${kubernetes-identity-hash}
-  - group: scheduling.kcp.dev
+  - group: scheduling.kcp.io
     resource: placements
     resourceSelector:
     - name: default
