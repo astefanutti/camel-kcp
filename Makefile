@@ -56,11 +56,11 @@ clean: ## Clean up temporary files
 
 .PHONY: manifests
 manifests: controller-gen ## Generate ClusterRole objects
-	$(CONTROLLER_GEN) rbac:roleName=camel-kcp paths="./..." output:rbac:artifacts:config=config/rbac/kcp
+	$(CONTROLLER_GEN) rbac:roleName=camel-kcp paths="./cmd/..." paths="./pkg/..." output:rbac:artifacts:config=config/rbac/kcp
 
 .PHONY: generate
 generate: controller-gen ## Generate code containing DeepCopy, DeepCopyInto, and DeepCopyObject method implementations
-	$(CONTROLLER_GEN) object:headerFile="hack/boilerplate.go.txt" paths="./..."
+	$(CONTROLLER_GEN) object:headerFile="hack/boilerplate.go.txt" paths="./cmd/..." paths="./pkg/..."
 
 .PHONY: apiresourceschemas
 apiresourceschemas: kustomize kcp ## Convert CRDs from config/crds to APIResourceSchemas
