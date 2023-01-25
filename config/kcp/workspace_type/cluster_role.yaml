@@ -18,12 +18,12 @@
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
-  name: system:kcp:camel-k-clusterworkspacetype-use
+  name: system:kcp:camel-k-workspacetype-use
 rules:
   - apiGroups:
-      - tenancy.kcp.dev
+      - tenancy.kcp.io
     resources:
-      - clusterworkspacetypes
+      - workspacetypes
     resourceNames:
       - camel-k
     verbs:

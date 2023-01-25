@@ -15,8 +15,8 @@
 # limitations under the License.
 # ---------------------------------------------------------------------------
 
-apiVersion: tenancy.kcp.dev/v1alpha1
-kind: ClusterWorkspaceType
+apiVersion: tenancy.kcp.io/v1alpha1
+kind: WorkspaceType
 metadata:
   name: camel-k
 spec:
