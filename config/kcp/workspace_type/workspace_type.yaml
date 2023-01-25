@@ -21,9 +21,9 @@ metadata:
   name: camel-k
 spec:
   defaultAPIBindings:
-    - exportName: kubernetes
+    - export: kubernetes
       path: root:compute
-    - exportName: camel-kcp
+    - export: camel-kcp
       path: root:camel-k # kpt-set: ${camel-kcp-workspace}
   extend:
     with:
