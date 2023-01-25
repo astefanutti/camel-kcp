@@ -168,7 +168,7 @@ func (r *reconciler) maybeCreatePlatform(ctx context.Context, platformConfig *co
 	return nil
 }
 
-// +kubebuilder:rbac:groups="scheduling.kcp.dev",resources=placements,verbs=get;create
+// +kubebuilder:rbac:groups="scheduling.kcp.io",resources=placements,verbs=get;create
 
 func (r *reconciler) maybeCreatePlacement(ctx context.Context, placementConfig *config.Placement) error {
 	placement := &schedulingv1alpha1.Placement{

@@ -14,7 +14,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ---------------------------------------------------------------------------
-apiVersion: scheduling.kcp.dev/v1alpha1
+apiVersion: scheduling.kcp.io/v1alpha1
 kind: Placement
 metadata:
   name: default
