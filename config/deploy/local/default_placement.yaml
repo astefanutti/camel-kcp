@@ -20,7 +20,7 @@ metadata:
   name: default
 spec:
   locationResource:
-    group: workload.kcp.dev
+    group: workload.kcp.io
     resource: synctargets
     version: v1alpha1
   namespaceSelector: {}
