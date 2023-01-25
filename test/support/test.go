@@ -26,6 +26,7 @@ import (
 
 	corev1 "k8s.io/api/core/v1"
 
+	corev1alpha1 "github.com/kcp-dev/kcp/pkg/apis/core/v1alpha1"
 	tenancyv1alpha1 "github.com/kcp-dev/kcp/pkg/apis/tenancy/v1alpha1"
 )
 
@@ -106,7 +107,7 @@ func (t *T) NewTestWorkspace(options ...Option[*tenancyv1alpha1.Workspace]) *ten
 	})
 	t.T().Logf("Creating workspace %v:%v", TestWorkspace, workspace.Name)
 	t.Eventually(Workspace(t, workspace.Name), TestTimeoutShort).
-		Should(gomega.WithTransform(WorkspacePhase, gomega.Equal(tenancyv1alpha1.WorkspaceInitialized)))
+		Should(gomega.WithTransform(WorkspacePhase, gomega.Equal(corev1alpha1.LogicalClusterPhaseReady)))
 	return workspace
 }
 
