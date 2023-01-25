@@ -6,7 +6,7 @@ metadata:
   name: camel-kcp
 rules:
 - apiGroups:
-  - apis.kcp.dev
+  - apis.kcp.io
   resources:
   - apiexports
   verbs:
@@ -14,7 +14,7 @@ rules:
   - list
   - watch
 - apiGroups:
-  - apis.kcp.dev
+  - apis.kcp.io
   resources:
   - apiexports/content
   verbs:

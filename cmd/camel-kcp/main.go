@@ -19,7 +19,6 @@ package main
 
 import (
 	"context"
-	"errors"
 	"flag"
 	"fmt"
 	"math/rand"
@@ -207,7 +206,7 @@ func main() {
 	exitOnError(err, "failed to create discovery client")
 
 	if !kcpAPIsGroupPresent(discoveryClient) {
-		exitOnError(errors.New("apis.kcp.dev group is not present"), "")
+		exitOnError(fmt.Errorf("%s group is not present", apisv1alpha1.SchemeGroupVersion.Group), "")
 	}
 
 	logger.Info("Looking up virtual workspace URL")
@@ -239,8 +238,8 @@ func main() {
 	exitOnError(mgr.Start(ctx), "manager exited non-zero")
 }
 
-// +kubebuilder:rbac:groups="apis.kcp.dev",resources=apiexports,verbs=get;list;watch
-// +kubebuilder:rbac:groups="apis.kcp.dev",resources=apiexports/content,verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups="apis.kcp.io",resources=apiexports,verbs=get;list;watch
+// +kubebuilder:rbac:groups="apis.kcp.io",resources=apiexports/content,verbs=get;list;watch;create;update;patch;delete
 
 // restConfigForAPIExport returns a *rest.Config properly configured to communicate with the endpoint for the
 // APIExport's virtual workspace. It blocks until the controller APIExport VirtualWorkspaceURLsReady condition

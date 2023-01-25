@@ -180,7 +180,7 @@ metadata:
   name: system:kcp:apiexport:kubernetes:bind
 rules:
   - apiGroups:
-      - apis.kcp.dev
+      - apis.kcp.io
     resources:
       - apiexports
     resourceNames:
