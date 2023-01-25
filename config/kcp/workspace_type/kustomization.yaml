@@ -16,6 +16,6 @@
 # ---------------------------------------------------------------------------
 
 resources:
-- cluster_workspace_type.yaml
+- workspace_type.yaml
 - cluster_role.yaml
 - cluster_role_binding.yaml
