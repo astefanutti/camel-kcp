@@ -163,7 +163,7 @@ ${KUBECTL_KCP_BIN} workspace use root
 ${KUSTOMIZE_BIN} build config/kcp/workspace_type | kubectl apply --server-side -f -
 
 # Get root scheduling APIExport identity hash
-schedulingIdentityHash=$(kubectl get apiexport scheduling.kcp.dev -o json | jq -r .status.identityHash)
+schedulingIdentityHash=$(kubectl get apiexport scheduling.kcp.io -o json | jq -r .status.identityHash)
 
 ${KUBECTL_KCP_BIN} workspace use root:compute
 
