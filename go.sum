@@ -801,8 +801,9 @@ github.com/kcp-dev/apimachinery v0.0.0-20221102195355-d65878bc16be h1:2uDzJ896+o
 github.com/kcp-dev/apimachinery v0.0.0-20221102195355-d65878bc16be/go.mod h1:qnvUHkdxOrNzX17yX+z8r81CZEBuFdveNzWqFlwZ55w=
 github.com/kcp-dev/apimachinery/v2 v2.0.0-alpha.0 h1:fb+3CdDlxvnK+o1wm3IcDbD+MJndMUa17EUGqYORsvg=
 github.com/kcp-dev/apimachinery/v2 v2.0.0-alpha.0/go.mod h1:dn1hXHMY9E6JbyOGa0qXt1Dq4akd/jHMZOpFhJoX7q4=
-github.com/kcp-dev/client-go v0.0.0-20221215092857-c1e5154a9825 h1:7jgn80ujqiaAFKTZ3AE5Lx5mOwyUdDLeJzn9MhZGA3E=
 github.com/kcp-dev/client-go v0.0.0-20221215092857-c1e5154a9825/go.mod h1:sj0r6sAHNsfEpA37uLTVGZj9TMQQWjBXk4rbpcIDZ7U=
+github.com/kcp-dev/client-go v0.0.0-20230126185145-aeff170a288b h1:7Raw5C50fye3c7FkltMWI4iAarVI5DQk9fnO6kkWd1s=
+github.com/kcp-dev/client-go v0.0.0-20230126185145-aeff170a288b/go.mod h1:sj0r6sAHNsfEpA37uLTVGZj9TMQQWjBXk4rbpcIDZ7U=
 github.com/kcp-dev/controller-runtime v0.12.2-0.20221214150305-84fb2b8c3ea7 h1:7+vDmW8AICXDFRIT00+DIFPPfNZMdC/LvEnOG1nE6SA=
 github.com/kcp-dev/controller-runtime v0.12.2-0.20221214150305-84fb2b8c3ea7/go.mod h1:/bQZfZEfH4a5nvAE+cT9twD3FNcB1hVcvRkdgiXcUAM=
 github.com/kcp-dev/kcp v0.10.1-0.20230119143945-4506fdc06406 h1:9StW3tmkuBKYZ31QCI/7pnUfgNP1uEe7WWnM6MWv4Ek=
@@ -842,9 +843,8 @@ github.com/kcp-dev/kubernetes/staging/src/k8s.io/mount-utils v0.0.0-202301131945
 github.com/kcp-dev/kubernetes/staging/src/k8s.io/pod-security-admission v0.0.0-20230113194502-8f8fb5fa4eea/go.mod h1:Am3TMZyUzKrYFH9EPBlU6sWcurIXfme5lkXAqvHIDwc=
 github.com/kcp-dev/kubernetes/staging/src/k8s.io/sample-apiserver v0.0.0-20230113194502-8f8fb5fa4eea/go.mod h1:fbI282oyry3+piBsRFF3txu43+Y7ThUc/VfOlxcPDFY=
 github.com/kcp-dev/logicalcluster/v2 v2.0.0-alpha.1/go.mod h1:lfWJL764jKFJxZWOGuFuT3PCCLPo6lV5Cl8P7u9T05g=
+github.com/kcp-dev/logicalcluster/v2 v2.0.0-alpha.3 h1:+DwIG/loh2nDB9c/FqNvLzFFq/YtBliLxAfw/uWNzyE=
 github.com/kcp-dev/logicalcluster/v2 v2.0.0-alpha.3/go.mod h1:lfWJL764jKFJxZWOGuFuT3PCCLPo6lV5Cl8P7u9T05g=
-github.com/kcp-dev/logicalcluster/v2 v2.0.0-alpha.4 h1:lHolbAfXXJDdcOO0bgQHtu0r4gq5Lt3/ueF0YGliIBc=
-github.com/kcp-dev/logicalcluster/v2 v2.0.0-alpha.4/go.mod h1:lfWJL764jKFJxZWOGuFuT3PCCLPo6lV5Cl8P7u9T05g=
 github.com/kcp-dev/logicalcluster/v3 v3.0.0/go.mod h1:6rb68Tntup98cRr9+50rvSDxUbfqrC1yQ/T6RiZcSgA=
 github.com/kcp-dev/logicalcluster/v3 v3.0.2 h1:U7wnYPgZLJt/X2G1/SYnynW6WnRmohxIvKaMwNL9BHM=
 github.com/kcp-dev/logicalcluster/v3 v3.0.2/go.mod h1:6rb68Tntup98cRr9+50rvSDxUbfqrC1yQ/T6RiZcSgA=

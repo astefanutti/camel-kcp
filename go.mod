@@ -6,10 +6,9 @@ require (
 	github.com/apache/camel-k v1.11.0
 	github.com/apache/camel-k/pkg/apis/camel v1.11.0
 	github.com/apache/camel-k/pkg/client/camel v1.11.0
-	github.com/kcp-dev/client-go v0.0.0-20221215092857-c1e5154a9825
+	github.com/kcp-dev/client-go v0.0.0-20230126185145-aeff170a288b
 	github.com/kcp-dev/kcp v0.10.1-0.20230119143945-4506fdc06406
 	github.com/kcp-dev/kcp/pkg/apis v0.10.1-0.20230119143945-4506fdc06406
-	github.com/kcp-dev/logicalcluster/v2 v2.0.0-alpha.4
 	github.com/kcp-dev/logicalcluster/v3 v3.0.2
 	github.com/onsi/gomega v1.22.1
 	go.uber.org/automaxprocs v1.5.1
@@ -88,6 +87,7 @@ require (
 	github.com/json-iterator/go v1.1.12 // indirect
 	github.com/kcp-dev/apimachinery v0.0.0-20221102195355-d65878bc16be // indirect
 	github.com/kcp-dev/apimachinery/v2 v2.0.0-alpha.0 // indirect
+	github.com/kcp-dev/logicalcluster/v2 v2.0.0-alpha.3 // indirect
 	github.com/kelseyhightower/envconfig v1.4.0 // indirect
 	github.com/klauspost/compress v1.14.4 // indirect
 	github.com/kr/pretty v0.3.0 // indirect
