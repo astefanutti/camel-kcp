@@ -138,6 +138,9 @@ if [ "$(docker inspect -f '{{.State.Running}}' "${registry_name}" 2>/dev/null ||
     registry:2.8.1
 fi
 
+# Update local configuration
+${KUSTOMIZE_BIN} fn run config/deploy/local --image gcr.io/kpt-fn/apply-setters:v0.2.0 -- registry-address="$registry_addr:$registry_port"
+
 # Start kcp
 echo "Starting kcp, writing logs to ${KCP_LOG_FILE}"
 ${KCP_BIN} --v=9 start --batteries-included=+user --feature-gates=KCPSyncerTunnel=true > ${KCP_LOG_FILE} 2>&1 &
