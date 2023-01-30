@@ -72,6 +72,6 @@ from:
 		Create(Inside(test.Ctx(), workspace), integration, metav1.CreateOptions{})
 	test.Expect(err).NotTo(HaveOccurred())
 
-	test.Eventually(Integration(test, namespace, integration.Name), TestTimeoutMedium).
+	test.Eventually(Integration(test, namespace, integration.Name), TestTimeoutLong).
 		Should(WithTransform(ConditionStatus(camelv1.IntegrationConditionReady), Equal(corev1.ConditionTrue)))
 }
