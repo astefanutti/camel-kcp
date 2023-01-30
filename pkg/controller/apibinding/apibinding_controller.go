@@ -33,7 +33,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 
-	"github.com/kcp-dev/logicalcluster/v2"
+	"github.com/kcp-dev/logicalcluster/v3"
 
 	apisv1alpha1 "github.com/kcp-dev/kcp/pkg/apis/apis/v1alpha1"
 	schedulingv1alpha1 "github.com/kcp-dev/kcp/pkg/apis/scheduling/v1alpha1"
@@ -93,7 +93,7 @@ func (r *reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 	rlog.Info("Reconciling APIBinding")
 
 	// Add the logical cluster to the context
-	ctx = logicalcluster.WithCluster(ctx, logicalcluster.New(request.ClusterName))
+	ctx = logicalcluster.WithCluster(ctx, logicalcluster.Name(request.ClusterName))
 
 	if ip := r.cfg.Service.OnAPIBinding.DefaultPlatform; ip != nil {
 		if ip.Namespace == "" {
