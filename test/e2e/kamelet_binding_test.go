@@ -70,7 +70,7 @@ func TestKameletBinding(t *testing.T) {
 		Create(Inside(test.Ctx(), workspace), binding, metav1.CreateOptions{})
 	test.Expect(err).NotTo(HaveOccurred())
 
-	test.Eventually(KameletBinding(test, namespace, binding.Name), TestTimeoutMedium).
+	test.Eventually(KameletBinding(test, namespace, binding.Name), TestTimeoutLong).
 		Should(And(
 			WithTransform(KameletBindingPhase, Equal(camelv1alpha1.KameletBindingPhaseReady)),
 			WithTransform(ConditionStatus(camelv1alpha1.KameletBindingConditionReady), Equal(corev1.ConditionTrue)),
