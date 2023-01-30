@@ -298,7 +298,7 @@ jobs:
         if: ${{ always() }}
         run: |
           echo "Kill camel-kcp process"
-          kill ${{ env.CAMEL_KCP_PID }}
+          kill ${{ env.CAMEL_KCP_PID }} || echo "camel-kcp is not running!"
 
           echo "Printing camel-kcp logs"
           cat ${{ env.CAMEL_KCP_LOG_FILE }}
