@@ -259,6 +259,7 @@ func restConfigForAPIExport(ctx context.Context, cfg *rest.Config, apiExportName
 	if len(list.Items) > 0 && isAPIExportReady(&list.Items[0]) {
 		cfg = rest.CopyConfig(cfg)
 		// TODO: sharding support
+		//nolint:staticcheck // SA1019 VirtualWorkspaces is deprecated but not removed yet
 		cfg.Host = list.Items[0].Status.VirtualWorkspaces[0].URL
 		return cfg, nil
 	}
@@ -290,6 +291,7 @@ func restConfigForAPIExport(ctx context.Context, cfg *rest.Config, apiExportName
 				}
 				cfg = rest.CopyConfig(cfg)
 				// TODO: sharding support
+				//nolint:staticcheck // SA1019 VirtualWorkspaces is deprecated but not removed yet
 				cfg.Host = apiExport.Status.VirtualWorkspaces[0].URL
 				return cfg, nil
 			}
@@ -303,6 +305,7 @@ func isAPIExportReady(apiExport *apisv1alpha1.APIExport) bool {
 		return false
 	}
 
+	//nolint:staticcheck // SA1019 VirtualWorkspaces is deprecated but not removed yet
 	if len(apiExport.Status.VirtualWorkspaces) == 0 {
 		logger.Info("APIExport does not have any virtual workspace URLs", "APIExport", apiExport.Name)
 		return false
