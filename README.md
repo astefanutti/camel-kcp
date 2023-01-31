@@ -7,7 +7,7 @@
 ## Prerequisites
 
 * [Make](https://www.gnu.org/software/make)
-* [Go](https://go.dev/doc/install) (v1.18 recommended)
+* [Go](https://go.dev/doc/install) (v1.19 recommended)
 * [Git](https://git-scm.com/book/en/v2/Getting-Started-Installing-Git)
 * [Docker](https://docs.docker.com/get-docker)
 * [KinD](https://kind.sigs.k8s.io/docs/user/quick-start/#installation)
