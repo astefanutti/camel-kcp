@@ -33,14 +33,14 @@ import (
 )
 
 type WorkspaceRef interface {
-	*tenancyv1alpha1.Workspace | logicalcluster.Path
+	*tenancyv1alpha1.Workspace | logicalcluster.Name
 }
 
 func InWorkspace[T metav1.Object, W WorkspaceRef](workspace W) Option[T] {
 	switch w := any(workspace).(type) {
 	case *tenancyv1alpha1.Workspace:
-		return &inWorkspace[T]{logicalcluster.From(w).Path().Join(w.Name)}
-	case logicalcluster.Path:
+		return &inWorkspace[T]{logicalcluster.Name(w.Spec.Cluster)}
+	case logicalcluster.Name:
 		return &inWorkspace[T]{w}
 	default:
 		return errorOption[T](func(to T) error {
@@ -50,7 +50,7 @@ func InWorkspace[T metav1.Object, W WorkspaceRef](workspace W) Option[T] {
 }
 
 type inWorkspace[T metav1.Object] struct {
-	workspace logicalcluster.Path
+	workspace logicalcluster.Name
 }
 
 var _ Option[metav1.Object] = &inWorkspace[metav1.Object]{}
@@ -134,8 +134,9 @@ func deleteTestWorkspace(t Test, workspace *tenancyv1alpha1.Workspace) {
 func HasImportedAPIs(t Test, workspace *tenancyv1alpha1.Workspace, gvks ...schema.GroupVersionKind) func(g gomega.Gomega) bool {
 	return func(g gomega.Gomega) bool {
 		// Get the logical cluster for the workspace
-		logicalCluster := logicalcluster.From(workspace).Path().Join(workspace.Name)
-		discovery := t.Client().Core().Cluster(logicalCluster).Discovery()
+		discovery := t.Client().Core().
+			Cluster(logicalcluster.NewPath(workspace.Spec.Cluster)).
+			Discovery()
 
 	loop:
 		for _, gvk := range gvks {
