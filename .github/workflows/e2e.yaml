@@ -262,6 +262,11 @@ jobs:
           scheduling-identity-hash="${SCHEDULING_IDENTITY_HASH}"
           kustomize build config/kcp | kubectl apply --server-side -f -
 
+          # Workaround APIExport virtual workspace API server initialisation on first binding
+          kubectl kcp ws
+          kubectl kcp ws create workaround --type camel-k
+          kubectl kcp ws root:camel-k
+
           # Install Kamelets
           (cd camel-k && make bundle-kamelets)
           export KAMELET_CATALOG_DIR=./camel-k/build/_kamelets
