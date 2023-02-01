@@ -165,42 +165,9 @@ ${KUSTOMIZE_BIN} build config/kcp/workspace_type | kubectl apply --server-side -
 # Get root scheduling APIExport identity hash
 schedulingIdentityHash=$(kubectl get apiexport scheduling.kcp.io -o json | jq -r .status.identityHash)
 
-${KUBECTL_KCP_BIN} workspace use root:compute
-
 # Get root compute APIExport identity hash
+${KUBECTL_KCP_BIN} workspace use root:compute
 kubernetesIdentityHash=$(kubectl get apiexport kubernetes -o json | jq -r .status.identityHash)
-
-# Grant authenticated users permission to bind the root compute APIExport
-# To be removed when https://github.com/kcp-dev/kcp/pull/2618 lands
-cat <<EOF | kubectl apply -f -
----
-apiVersion: rbac.authorization.k8s.io/v1
-kind: ClusterRole
-metadata:
-  name: system:kcp:apiexport:kubernetes:bind
-rules:
-  - apiGroups:
-      - apis.kcp.io
-    resources:
-      - apiexports
-    resourceNames:
-      - kubernetes
-    verbs:
-      - bind
----
-apiVersion: rbac.authorization.k8s.io/v1
-kind: ClusterRoleBinding
-metadata:
-  name: system:kcp:authenticated:apiexport:kubernetes:bind
-roleRef:
-  apiGroup: rbac.authorization.k8s.io
-  kind: ClusterRole
-  name: system:kcp:apiexport:kubernetes:bind
-subjects:
-  - apiGroup: rbac.authorization.k8s.io
-    kind: Group
-    name: system:authenticated
-EOF
 
 # Create service workspace
 ${KUBECTL_KCP_BIN} workspace use root

@@ -165,46 +165,12 @@ jobs:
           # Install camel-k workspace type
           kustomize build config/kcp/workspace_type | kubectl apply --server-side -f -
 
-          kubectl kcp ws use root:compute
-
           # Get root compute APIExport identity hash
+          kubectl kcp ws use root:compute
           KUBERNETES_IDENTITY_HASH=$(kubectl get apiexport kubernetes -o json | jq -r .status.identityHash)
 
-          # Grant authenticated users permission to bind the root compute APIExport
-          # To be removed when https://github.com/kcp-dev/kcp/pull/2618 lands
-          cat <<EOF | kubectl apply -f -
-          ---
-          apiVersion: rbac.authorization.k8s.io/v1
-          kind: ClusterRole
-          metadata:
-            name: system:kcp:apiexport:kubernetes:bind
-          rules:
-            - apiGroups:
-                - apis.kcp.io
-              resources:
-                - apiexports
-              resourceNames:
-                - kubernetes
-              verbs:
-                - bind
-          ---
-          apiVersion: rbac.authorization.k8s.io/v1
-          kind: ClusterRoleBinding
-          metadata:
-            name: system:kcp:authenticated:apiexport:kubernetes:bind
-          roleRef:
-            apiGroup: rbac.authorization.k8s.io
-            kind: ClusterRole
-            name: system:kcp:apiexport:kubernetes:bind
-          subjects:
-            - apiGroup: rbac.authorization.k8s.io
-              kind: Group
-              name: system:authenticated
-          EOF
-
-          kubectl kcp ws use root
-
           # Create service workspace
+          kubectl kcp ws use root
           kubectl kcp ws create camel-k --enter
 
           # Create control and data plane locations
