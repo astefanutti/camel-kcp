@@ -105,9 +105,15 @@ func (t *T) NewTestWorkspace(options ...Option[*tenancyv1alpha1.Workspace]) *ten
 	t.T().Cleanup(func() {
 		deleteTestWorkspace(t, workspace)
 	})
-	t.T().Logf("Creating workspace %v:%v", TestWorkspace, workspace.Name)
 	t.Eventually(Workspace(t, workspace.Name), TestTimeoutShort).
 		Should(gomega.WithTransform(WorkspacePhase, gomega.Equal(corev1alpha1.LogicalClusterPhaseReady)))
+
+	var err error
+	workspace, err = GetWorkspace(t, workspace.Name)
+	t.Expect(err).NotTo(gomega.HaveOccurred())
+
+	t.T().Logf("Created workspace %v:%v", TestWorkspace, workspace.Name)
+
 	return workspace
 }
 
