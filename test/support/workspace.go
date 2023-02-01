@@ -90,6 +90,11 @@ func Workspace(t Test, name string) func() *tenancyv1alpha1.Workspace {
 	}
 }
 
+func GetWorkspace(t Test, name string) (*tenancyv1alpha1.Workspace, error) {
+	t.T().Helper()
+	return t.Client().Kcp().Cluster(TestWorkspace).TenancyV1alpha1().Workspaces().Get(t.Ctx(), name, metav1.GetOptions{})
+}
+
 func WorkspacePhase(workspace *tenancyv1alpha1.Workspace) corev1alpha1.LogicalClusterPhaseType {
 	return workspace.Status.Phase
 }
