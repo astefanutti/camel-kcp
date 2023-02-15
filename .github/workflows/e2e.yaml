@@ -143,7 +143,7 @@ jobs:
           KCP_LOG_FILE="${TEMP_DIR}"/kcp.log
           echo "KCP_LOG_FILE=${KCP_LOG_FILE}" >> $GITHUB_ENV
           echo "Starting kcp, sending logs to ${KCP_LOG_FILE}"
-          kcp start --batteries-included=+user > ${KCP_LOG_FILE} 2>&1 &
+          kcp start --batteries-included=+user --feature-gates=KCPSyncerTunnel=true > ${KCP_LOG_FILE} 2>&1 &
           KCP_PID=$!
           echo "KCP_PID=${KCP_PID}" >> $GITHUB_ENV
 
@@ -214,11 +214,11 @@ jobs:
           kubectl create namespace kcp-syncer
           KCP_SYNCER_IMAGE="ghcr.io/kcp-dev/kcp/syncer:$(make get-kcp-version)"
 
-          kubectl kcp workload sync control --kcp-namespace kcp-syncer --syncer-image=${KCP_SYNCER_IMAGE} -o - | kubectl --kubeconfig ${TEMP_DIR}/control.kubeconfig apply --server-side -f -
+          kubectl kcp workload sync control --feature-gates=KCPSyncerTunnel=true --kcp-namespace kcp-syncer --syncer-image=${KCP_SYNCER_IMAGE} -o - | kubectl --kubeconfig ${TEMP_DIR}/control.kubeconfig apply --server-side -f -
           kubectl label synctarget control "org.apache.camel/control-plane="
           kubectl wait --timeout=300s --for=condition=Ready=true synctarget control
 
-          kubectl kcp workload sync data --kcp-namespace kcp-syncer --syncer-image=${KCP_SYNCER_IMAGE} -o - | kubectl --kubeconfig ${TEMP_DIR}/data.kubeconfig apply --server-side -f -
+          kubectl kcp workload sync data --feature-gates=KCPSyncerTunnel=true --kcp-namespace kcp-syncer --syncer-image=${KCP_SYNCER_IMAGE} -o - | kubectl --kubeconfig ${TEMP_DIR}/data.kubeconfig apply --server-side -f -
           kubectl label synctarget data "org.apache.camel/data-plane="
           kubectl wait --timeout=300s --for=condition=Ready=true synctarget data
 
