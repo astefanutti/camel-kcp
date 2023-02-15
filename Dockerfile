@@ -11,7 +11,7 @@
 # limitations under the License.
 
 # Build the binary
-FROM --platform=${BUILDPLATFORM} golang:1.18 AS builder
+FROM --platform=${BUILDPLATFORM} golang:1.19 AS builder
 
 WORKDIR /workspace
 
