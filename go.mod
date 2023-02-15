@@ -1,6 +1,6 @@
 module github.com/apache/camel-kcp
 
-go 1.18
+go 1.19
 
 require (
 	github.com/apache/camel-k v1.11.0
