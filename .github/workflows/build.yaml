@@ -34,6 +34,8 @@ on:
       - '**.adoc'
       - '**.md'
       - 'LICENSE'
+  schedule:
+    - cron: '0 12 * * *'
 
 jobs:
 
