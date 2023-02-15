@@ -46,7 +46,7 @@ jobs:
           submodules: recursive
       - uses: actions/setup-go@v3
         with:
-          go-version: v1.18
+          go-version: v1.19
       - uses: golangci/golangci-lint-action@v3
         with:
           version: v1.50.1
@@ -62,5 +62,5 @@ jobs:
           submodules: recursive
       - uses: actions/setup-go@v3
         with:
-          go-version: v1.18
+          go-version: v1.19
       - run: make build
