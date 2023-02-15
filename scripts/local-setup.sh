@@ -219,7 +219,7 @@ echo "Creating kcp SyncTarget control cluster"
 
 emptyPatch=()
 
-createSyncTarget $KCP_CONTROL_CLUSTER_NAME 9080 9443 "$registry_addr:$registry_port" "control" "" emptyPatch
+createSyncTarget $KCP_CONTROL_CLUSTER_NAME 9080 9443 "$registry_addr:$registry_port" "control" "--feature-gates=KCPSyncerTunnel=true" emptyPatch
 kubectl label --overwrite synctarget "control" "org.apache.camel/control-plane="
 kubectl wait --timeout=300s --for=condition=Ready=true synctargets "control"
 
