@@ -228,33 +228,9 @@ echo "Creating $NUM_CLUSTERS kcp SyncTarget cluster(s)"
 
 port80=9081
 port443=9444
-patchSyncerClusterRole=(--group rbac.authorization.k8s.io --kind ClusterRole name kcp-syncer-.* --patch "$(cat << 'EOF'
-- op: add
-  path: /rules/-
-  value:
-    apiGroups:
-      - ""
-    resources:
-      - pods
-    verbs:
-      - get
-      - list
-- op: add
-  path: /rules/-
-  value:
-    apiGroups:
-      - ""
-    resources:
-      - pods/log
-      - pods/exec
-      - pods/proxy
-    verbs:
-      - get
-EOF
-)")
 
 for cluster in $CLUSTERS; do
-  createSyncTarget "$cluster" $port80 $port443 "$registry_addr:$registry_port" "$cluster" "--feature-gates=KCPSyncerTunnel=true" patchSyncerClusterRole
+  createSyncTarget "$cluster" $port80 $port443 "$registry_addr:$registry_port" "$cluster" "--feature-gates=KCPSyncerTunnel=true" emptyPatch
   kubectl label --overwrite synctarget "$cluster" "org.apache.camel/data-plane="
 
   echo "Deploying Ingress controller to ${cluster}"
