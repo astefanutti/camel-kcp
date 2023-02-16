@@ -268,7 +268,7 @@ jobs:
           echo "Printing camel-kcp logs"
           # FIXME: get logs from kcp when automatic pods up-syncing will be available
           downstream=$(kubectl --kubeconfig ${TEMP_DIR}/control.kubeconfig get ns -o json | jq -r '.items[] | select(.metadata.annotations."kcp.io/namespace-locator" // "{}" | fromjson | .namespace=="camel-kcp").metadata.name')
-          kubectl --kubeconfig=${TEMP_DIR}/control.kubeconfig logs -n ${downstream} -l app.kubernetes.io/name=camel-k -l app.kubernetes.io/component=controller-manager
+          kubectl --kubeconfig=${TEMP_DIR}/control.kubeconfig logs -n ${downstream} --tail -1 -l app.kubernetes.io/name=camel-k -l app.kubernetes.io/component=controller-manager
 
       - name: Shutdown kcp
         if: ${{ always() }}
