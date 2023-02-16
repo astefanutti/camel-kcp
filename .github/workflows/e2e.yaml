@@ -87,6 +87,10 @@ jobs:
         with:
           go-version: v1.19
 
+      - name: Setup Buildx
+        run: |
+          docker buildx install
+
       - name: Container image registry
         run: |
           docker run -d --restart=always -p 5000:5000 --name registry registry:2.8.1
