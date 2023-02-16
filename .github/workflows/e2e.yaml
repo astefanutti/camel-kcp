@@ -239,24 +239,9 @@ jobs:
           (cd camel-k && make bundle-kamelets)
           export KAMELET_CATALOG_DIR=./camel-k/build/_kamelets
 
-          # Start camel-kcp
-          CAMEL_KCP_LOG_FILE="${TEMP_DIR}"/camel-kcp.log
-          echo "CAMEL_KCP_LOG_FILE=${CAMEL_KCP_LOG_FILE}" >> $GITHUB_ENV
-
-          kustomize fn run config/deploy/local --image gcr.io/kpt-fn/apply-setters:v0.2.0 -- registry-address=${REGISTRY_ADDRESS}
-
-          echo "Starting camel-kcp, writing logs to ${CAMEL_KCP_LOG_FILE}"
-          camel-kcp --config=config/deploy/local/config.yaml > ${CAMEL_KCP_LOG_FILE} 2>&1 &
-          CAMEL_KCP_PID=$!
-          echo "CAMEL_KCP_PID=${CAMEL_KCP_PID}" >> $GITHUB_ENV
-
-          echo "Waiting 15 seconds..."
-          sleep 15
-
-          if ! ps -p ${CAMEL_KCP_PID}; then
-            echo "camel-kcp failed to start, see ${CAMEL_KCP_LOG_FILE} for info."
-            exit 1
-          fi
+          # Deploy camel-kcp
+          make local-deploy
+          kubectl wait --timeout=300s --for=condition=Available=true -n camel-kcp deployment camel-kcp
 
       - name: Run e2e tests
         run: |
@@ -267,14 +252,13 @@ jobs:
 
           TEST_WORKSPACE=$(kubectl kcp ws . --short) make e2e
 
-      - name: Shutdown camel-kcp
+      - name: Print camel-kcp logs
         if: ${{ always() }}
         run: |
-          echo "Kill camel-kcp process"
-          kill ${{ env.CAMEL_KCP_PID }} || echo "camel-kcp is not running!"
-
           echo "Printing camel-kcp logs"
-          cat ${{ env.CAMEL_KCP_LOG_FILE }}
+          # FIXME: get logs from kcp when automatic pods up-syncing will be available
+          downstream=$(kubectl --kubeconfig tmp/kcp-cluster-control.kubeconfig get ns -o json | jq -r '.items[] | select(.metadata.annotations."kcp.io/namespace-locator" // "{}" | fromjson | .namespace=="camel-kcp").metadata.name')
+          kubectl --kubeconfig=${TEMP_DIR}/control.kubeconfig logs -n ${downstream} -l app.kubernetes.io/name=camel-k -l app.kubernetes.io/component=controller-manager
 
       - name: Shutdown kcp
         if: ${{ always() }}
