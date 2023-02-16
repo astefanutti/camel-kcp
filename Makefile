@@ -121,7 +121,7 @@ local-deploy: kustomize build-image ## Deploy controller to the local K8s cluste
 ifeq ($(shell uname -s 2>/dev/null || echo Unknown),Darwin)
 	$(eval registry_addr:=$(shell ipconfig getifaddr en0))
 else
-	$(eval registry_addr:=$(shell ip addr | grep 'state UP' -A2 | tail -n1 | awk '{print $2}' | cut -f1 -d'/'))
+	$(eval registry_addr:=$(shell hostname -i))
 endif
 	docker tag ${IMG} $(registry_addr):5001/$(IMAGE_NAME)
 	docker push $(registry_addr):5001/$(IMAGE_NAME)
