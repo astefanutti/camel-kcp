@@ -136,9 +136,6 @@ jobs:
           echo "Building kcp"
           make kcp
 
-          echo "Building camel-kcp"
-          make build
-
           echo "Installing kustomize"
           make kustomize
 
