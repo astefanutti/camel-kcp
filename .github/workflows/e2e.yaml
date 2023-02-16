@@ -103,6 +103,10 @@ jobs:
           echo "KIND_CONFIG_FILE=${KIND_CONFIG_FILE}" >> $GITHUB_ENV
           envsubst < ./test/e2e/kind.yaml > ${KIND_CONFIG_FILE}
 
+          sudo service docker stop
+          sudo echo "{\"insecure-registries\": [\"${REGISTRY_ADDRESS}\"]}" | sudo tee /etc/docker/daemon.json > /dev/null
+          sudo service docker start
+
       - name: Get KinD version
         run: |
           KIND_VERSION=$(make get-kind-version)
