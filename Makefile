@@ -90,7 +90,6 @@ build: ## Build the project
 
 .PHONY: build-image
 build-image: ## Build container image
-	cd camel-k && make clean maven-overlay bundle-kamelets
 	docker build -t ${IMG} .
 
 ##@ Deployment

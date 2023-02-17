@@ -54,6 +54,28 @@ ARG TARGETARCH
 
 RUN make OS=${TARGETOS} ARCH=${TARGETARCH} build
 
+# Build the Camel K resources
+FROM maven:3.8.4-eclipse-temurin-11 AS camel-k
+
+RUN apt update && apt install make wget zip -y
+
+WORKDIR /tmp
+
+RUN wget https://dl.google.com/go/go1.19.linux-amd64.tar.gz \
+    && tar -xvf go1.19.linux-amd64.tar.gz \
+    && mv go /usr/local
+
+ENV GOROOT=/usr/local/go
+ENV GOPATH=$HOME/go
+ENV PATH=$GOPATH/bin:$GOROOT/bin:$PATH
+
+WORKDIR /workspace
+
+# Copy sub-modules
+COPY camel-k/ camel-k/
+
+RUN cd camel-k && make maven-overlay bundle-kamelets
+
 FROM eclipse-temurin:11
 
 ARG MAVEN_VERSION="3.8.4"
@@ -71,9 +93,9 @@ RUN mkdir -p ${MAVEN_HOME} \
     && ln -s ${MAVEN_HOME}/bin/mvn /usr/bin/mvn \
     && rm ${MAVEN_HOME}/lib/maven-slf4j-provider*
 
-ADD camel-k/build/_kamelets /kamelets
-COPY camel-k/build/_maven_overlay/ /usr/share/maven/lib/
-ADD camel-k/build/_maven_overlay/logback.xml /usr/share/maven/conf/
+COPY --from=camel-k workspace/camel-k/build/_kamelets /kamelets
+COPY --from=camel-k workspace/camel-k/build/_maven_overlay/ /usr/share/maven/lib/
+COPY --from=camel-k workspace/camel-k/build/_maven_overlay/logback.xml /usr/share/maven/conf/
 
 ENV MAVEN_OPTS="${MAVEN_OPTS} -Dlogback.configurationFile=/usr/share/maven/conf/logback.xml"
 
