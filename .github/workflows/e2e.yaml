@@ -244,11 +244,6 @@ jobs:
           scheduling-identity-hash="${SCHEDULING_IDENTITY_HASH}"
           kustomize build config/kcp | kubectl apply --server-side -f -
 
-          # Workaround APIExport virtual workspace API server initialisation on first binding
-          kubectl kcp ws
-          kubectl kcp ws create workaround --type camel-k
-          kubectl kcp ws root:camel-k
-
           # Deploy camel-kcp
           make local-deploy
           kubectl wait --timeout=300s --for=condition=Available=true -n camel-kcp deployment camel-kcp
