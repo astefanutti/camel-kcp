@@ -255,6 +255,11 @@ jobs:
       - name: Print camel-kcp logs
         if: ${{ always() }}
         run: |
+          export KUBECONFIG=$(pwd)/.kcp/admin.kubeconfig
+
+          kubectl config use-context root
+          kubectl kcp ws root:camel-k
+
           echo "Printing camel-kcp logs"
           kubectl logs -n camel-kcp --tail -1 -l app.kubernetes.io/name=camel-k -l app.kubernetes.io/component=controller-manager
 
