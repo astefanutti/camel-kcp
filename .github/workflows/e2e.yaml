@@ -87,11 +87,6 @@ jobs:
         with:
           go-version: v1.19
 
-      - name: Install jq
-        run: |
-          sudo apt-get update
-          sudo apt-get install jq
-
       - name: Setup Buildx
         run: |
           docker buildx install
