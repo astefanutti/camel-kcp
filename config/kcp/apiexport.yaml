@@ -39,6 +39,10 @@ spec:
     resource: secrets
     all: true
   - group: ""
+    resource: pods
+    all: true
+    identityHash: IDENTITY_HASH # kpt-set: ${kubernetes-identity-hash}
+  - group: ""
     resource: services
     all: true
     identityHash: IDENTITY_HASH # kpt-set: ${kubernetes-identity-hash}
