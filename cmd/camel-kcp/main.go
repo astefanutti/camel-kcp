@@ -240,7 +240,7 @@ func main() {
 	c, err := client.NewClient(apiExportCfg, scheme, mgr.GetClient())
 	exitOnError(err, "failed to create client")
 
-	exitOnError(controller.AddToManager(mgr, c), "")
+	exitOnError(controller.AddToManager(ctx, mgr, c), "")
 	exitOnError(apibinding.Add(mgr, c, svcCfg), "")
 
 	logger.Info("Starting the manager")
