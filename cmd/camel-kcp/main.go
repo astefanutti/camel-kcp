@@ -228,15 +228,6 @@ func main() {
 	exitOnError(mgr.AddHealthzCheck("healthz", healthz.Ping), "Unable to add health check")
 	exitOnError(mgr.AddReadyzCheck("readyz", healthz.Ping), "Unable to add ready check")
 
-	exitOnError(
-		mgr.GetFieldIndexer().IndexField(ctx, &corev1.Pod{}, "status.phase",
-			func(obj ctrlclient.Object) []string {
-				pod, _ := obj.(*corev1.Pod)
-				return []string{string(pod.Status.Phase)}
-			}),
-		"unable to set up field indexer for status.phase: %v",
-	)
-
 	c, err := client.NewClient(apiExportCfg, scheme, mgr.GetClient())
 	exitOnError(err, "failed to create client")
 
