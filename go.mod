@@ -156,6 +156,8 @@ require (
 
 replace github.com/cloudevents/sdk-go/sql/v2 => github.com/cloudevents/sdk-go/sql/v2 v2.0.0-20220930150014-52b12276cc4a
 
+replace github.com/apache/camel-k v1.12.0 => ./camel-k
+
 replace (
 	github.com/kcp-dev/kcp/pkg/apis => github.com/kcp-dev/kcp/pkg/apis v0.11.0
 	sigs.k8s.io/controller-runtime => github.com/kcp-dev/controller-runtime v0.12.2-0.20221214150305-84fb2b8c3ea7
