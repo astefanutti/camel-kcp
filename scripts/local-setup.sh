@@ -64,9 +64,7 @@ mkdir -p ${TEMP_DIR}
 
 createCluster() {
   cluster=$1;
-  port80=$2;
-  port443=$3;
-  registry=$4;
+  registry=$2;
   cat <<EOF | ${KIND_BIN} create cluster --name "${cluster}" --kubeconfig ${TEMP_DIR}/"${cluster}".kubeconfig --config=-
 kind: Cluster
 apiVersion: kind.x-k8s.io/v1alpha4
@@ -79,13 +77,6 @@ nodes:
     nodeRegistration:
       kubeletExtraArgs:
         node-labels: "ingress-ready=true"
-  extraPortMappings:
-  - containerPort: 80
-    hostPort: ${port80}
-    protocol: TCP
-  - containerPort: 443
-    hostPort: ${port443}
-    protocol: TCP
 containerdConfigPatches:
 - |-
   [plugins."io.containerd.grpc.v1.cri".registry.mirrors."${registry}"]
@@ -94,11 +85,11 @@ EOF
 }
 
 createSyncTarget() {
-  createCluster $1 $2 $3 $4
-  target=$5
-  args=$6
+  createCluster $1 $2
+  target=$3
+  args=$4
 
-  name="$7[@]"
+  name="$5[@]"
   patch=("${!name}")
 
   dir=${TEMP_DIR}/"${1}"
@@ -219,18 +210,15 @@ echo "Creating kcp SyncTarget control cluster"
 
 emptyPatch=()
 
-createSyncTarget $KCP_CONTROL_CLUSTER_NAME 9080 9443 "$registry_addr:$registry_port" "control" "--feature-gates=KCPSyncerTunnel=true" emptyPatch
+createSyncTarget $KCP_CONTROL_CLUSTER_NAME "$registry_addr:$registry_port" "control" "--feature-gates=KCPSyncerTunnel=true" emptyPatch
 kubectl label --overwrite synctarget "control" "org.apache.camel/control-plane="
 kubectl wait --timeout=300s --for=condition=Ready=true synctargets "control"
 
 # Create data plane sync targets and wait for them to be ready
 echo "Creating $NUM_CLUSTERS kcp SyncTarget cluster(s)"
 
-port80=9081
-port443=9444
-
 for cluster in $CLUSTERS; do
-  createSyncTarget "$cluster" $port80 $port443 "$registry_addr:$registry_port" "$cluster" "--feature-gates=KCPSyncerTunnel=true" emptyPatch
+  createSyncTarget "$cluster" "$registry_addr:$registry_port" "$cluster" "--feature-gates=KCPSyncerTunnel=true" emptyPatch
   kubectl label --overwrite synctarget "$cluster" "org.apache.camel/data-plane="
 
   echo "Deploying Ingress controller to ${cluster}"
@@ -240,9 +228,6 @@ for cluster in $CLUSTERS; do
   kubectl --kubeconfig "${kubeconfig}" annotate ingressclass nginx "ingressclass.kubernetes.io/is-default-class=true"
   echo "Waiting for deployments to be ready ..."
   kubectl --kubeconfig "${kubeconfig}" -n ingress-nginx wait --timeout=300s --for=condition=Available deployments --all
-
-  port80=$((port80 + 1))
-  port443=$((port443 + 1))
 done
 kubectl wait --timeout=300s --for=condition=Ready=true synctargets ${CLUSTERS}
 
