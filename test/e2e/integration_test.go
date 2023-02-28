@@ -18,6 +18,10 @@ limitations under the License.
 package e2e
 
 import (
+	"context"
+	"io"
+	"net/http"
+	"net/url"
 	"testing"
 
 	. "github.com/onsi/gomega"
@@ -43,9 +47,10 @@ func TestIntegration(t *testing.T) {
 	namespace := test.NewTestNamespace(InWorkspace[*corev1.Namespace](workspace))
 
 	// Create the Integration
+	name := "hello"
 	integration := &camelv1.Integration{
 		ObjectMeta: metav1.ObjectMeta{
-			Name: "test",
+			Name: name,
 		},
 		Spec: camelv1.IntegrationSpec{
 			Flows: []camelv1.Flow{
@@ -64,6 +69,9 @@ from:
 						Enabled: pointer.Bool(true),
 					},
 				},
+				Ingress: &traitv1.IngressTrait{
+					// TODO: configure path to avoid conflicts
+				},
 			},
 		},
 	}
@@ -72,6 +80,40 @@ from:
 		Create(Inside(test.Ctx(), workspace), integration, metav1.CreateOptions{})
 	test.Expect(err).NotTo(HaveOccurred())
 
-	test.Eventually(Integration(test, namespace, integration.Name), TestTimeoutLong).
+	test.Eventually(Integration(test, namespace, name), TestTimeoutLong).
 		Should(WithTransform(ConditionStatus(camelv1.IntegrationConditionReady), Equal(corev1.ConditionTrue)))
+
+	test.Eventually(Ingress(test, namespace, name), TestTimeoutShort).
+		Should(WithTransform(LoadBalancerIngresses, HaveLen(1)))
+
+	ingress, err := GetIngress(test, namespace, name)
+	test.Expect(err).NotTo(HaveOccurred())
+
+	endpoint := url.URL{Scheme: "http", Host: ingress.Status.LoadBalancer.Ingress[0].IP, Path: "hello"}
+	response, err := requestBody(test.Ctx(), endpoint.String())
+	test.Expect(err).NotTo(HaveOccurred())
+
+	test.Expect(response, Equal([]byte("Happy e2e testing!")))
+}
+
+func requestBody(ctx context.Context, url string) (data []byte, err error) {
+	request, err := http.NewRequestWithContext(ctx, "GET", url, nil)
+	if err != nil {
+		return
+	}
+	client := http.Client{}
+	response, err := client.Do(request)
+	if err != nil {
+		return
+	}
+
+	defer func(Body io.ReadCloser) {
+		e := Body.Close()
+		if err == nil {
+			err = e
+		}
+	}(response.Body)
+
+	data, err = io.ReadAll(response.Body)
+	return
 }
