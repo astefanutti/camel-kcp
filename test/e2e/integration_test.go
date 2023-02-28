@@ -97,18 +97,19 @@ from:
 }
 
 func requestBody(ctx context.Context, url string) (data []byte, err error) {
-	request, err := http.NewRequestWithContext(ctx, "GET", url, nil)
+	request, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
 	if err != nil {
 		return
 	}
 	client := http.Client{}
+	// nolint: bodyclose
 	response, err := client.Do(request)
 	if err != nil {
 		return
 	}
 
-	defer func(Body io.ReadCloser) {
-		e := Body.Close()
+	defer func(body io.ReadCloser) {
+		e := body.Close()
 		if err == nil {
 			err = e
 		}
