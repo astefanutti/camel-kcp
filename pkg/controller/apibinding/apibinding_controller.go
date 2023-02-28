@@ -147,7 +147,7 @@ func (r *reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 		return reconcile.Result{}, err
 	}
 
-	if err := r.applyKaotoResources(ctx, platform.DefaultNamespaceName); err != nil {
+	if err := r.applyKaotoResources(ctx, request, platform.DefaultNamespaceName); err != nil {
 		if errors.IsNotFound(err) {
 			rlog.Debug("Bound APIs are not yet found")
 			return reconcile.Result{Requeue: true}, nil
@@ -217,7 +217,7 @@ func (r *reconciler) maybeCreatePlacement(ctx context.Context, placementConfig *
 	return nil
 }
 
-func (r *reconciler) applyKaotoResources(ctx context.Context, camelNamespaceName string) error {
+func (r *reconciler) applyKaotoResources(ctx context.Context, request reconcile.Request, camelNamespaceName string) error {
 	serviceAccount := corev1ac.ServiceAccount("kaoto", kaotoNamespaceName)
 	_, err := r.client.CoreV1().ServiceAccounts(kaotoNamespaceName).
 		Apply(ctx, serviceAccount, metav1.ApplyOptions{FieldManager: applyManager, Force: true})
@@ -341,7 +341,7 @@ func (r *reconciler) applyKaotoResources(ctx context.Context, camelNamespaceName
 			WithRules(networkingv1ac.IngressRule().
 				WithHTTP(networkingv1ac.HTTPIngressRuleValue().
 					WithPaths(networkingv1ac.HTTPIngressPath().
-						WithPath("/kaoto(/|$)(.*)").
+						WithPath("/" + request.ClusterName + "/kaoto(/|$)(.*)").
 						WithPathType(networkingv1.PathTypePrefix).
 						WithBackend(networkingv1ac.IngressBackend().
 							WithService(networkingv1ac.IngressServiceBackend().
