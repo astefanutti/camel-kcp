@@ -139,6 +139,15 @@ jobs:
           kubectl --context kind-kcp-data-cluster describe nodes
           kind get kubeconfig --name kcp-data-cluster > ${TEMP_DIR}/data.kubeconfig
 
+      - name: Install Ingress controller
+        run: |
+          VERSION=controller-v1.2.1
+          echo "Deploying Ingress controller to data plane cluster"
+          kubectl config use-context kind-kcp-data-cluster
+          curl https://raw.githubusercontent.com/kubernetes/ingress-nginx/"${VERSION}"/deploy/static/provider/kind/deploy.yaml | sed "s/--publish-status-address=localhost/--report-node-internal-ip-address/g" | kubectl apply -f -
+          kubectl annotate ingressclass nginx "ingressclass.kubernetes.io/is-default-class=true"
+          kubectl -n ingress-nginx wait --timeout=300s --for=condition=Available deployments --all
+
       - name: Run kcp and camel-kcp
         run: |
           echo "Building kcp"
