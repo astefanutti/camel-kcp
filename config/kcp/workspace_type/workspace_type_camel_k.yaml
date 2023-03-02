@@ -23,8 +23,8 @@ spec:
   defaultAPIBindings:
     - export: kubernetes
       path: root:compute
-    - export: camel-kcp
-      path: root:camel-k # kpt-set: ${camel-kcp-workspace}
+    - export: camel-k
+      path: root:camel-kcp # kpt-set: ${camel-kcp-workspace}
   extend:
     with:
       - name: universal
