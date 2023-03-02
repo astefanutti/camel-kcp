@@ -30,6 +30,8 @@ import (
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 
+	"golang.org/x/sync/errgroup"
+
 	// Import all Kubernetes client auth plugins (e.g. Azure, GCP, OIDC, etc.)
 	// to ensure that exec-entrypoint and run can make use of them.
 	_ "k8s.io/client-go/plugin/pkg/client/auth"
@@ -46,14 +48,13 @@ import (
 	"k8s.io/apimachinery/pkg/watch"
 	"k8s.io/client-go/discovery"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
-	"k8s.io/client-go/tools/record"
-	retrywatch "k8s.io/client-go/tools/watch"
-	"k8s.io/utils/pointer"
-
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/leaderelection/resourcelock"
+	"k8s.io/client-go/tools/record"
+	retrywatch "k8s.io/client-go/tools/watch"
 	configv1alpha1 "k8s.io/component-base/config/v1alpha1"
 	"k8s.io/klog/v2"
+	"k8s.io/utils/pointer"
 
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/cache"
@@ -182,7 +183,18 @@ func main() {
 			},
 		},
 		Service: config.ServiceConfigurationSpec{
-			APIExportName: "camel-kcp",
+			APIExports: config.APIExports{
+				CamelK: config.CamelKAPIExport{
+					LocalAPIExportReference: config.LocalAPIExportReference{
+						APIExportName: "camel-k",
+					},
+				},
+				Kaoto: config.KaotoAPIExport{
+					LocalAPIExportReference: config.LocalAPIExportReference{
+						APIExportName: "kaoto",
+					},
+				},
+			},
 		},
 	}
 
@@ -195,7 +207,7 @@ func main() {
 	_, err = maxprocs.Set(maxprocs.Logger(func(f string, a ...interface{}) { logger.Info(fmt.Sprintf(f, a)) }))
 	exitOnError(err, "failed to set GOMAXPROCS from cgroups")
 
-	if ip := svcCfg.Service.OnAPIBinding.DefaultPlatform; ip != nil && ip.Namespace != "" {
+	if ip := svcCfg.Service.APIExports.CamelK.OnAPIBinding.DefaultPlatform; ip != nil && ip.Namespace != "" {
 		exitOnError(os.Setenv(platform.OperatorNamespaceEnvVariable, ip.Namespace), "")
 	} else {
 		exitOnError(os.Setenv(platform.OperatorNamespaceEnvVariable, platform.DefaultNamespaceName), "")
@@ -209,33 +221,81 @@ func main() {
 		exitOnError(fmt.Errorf("%s group is not present", apisv1alpha1.SchemeGroupVersion.Group), "")
 	}
 
-	logger.Info("Looking up virtual workspace URL")
-	apiExportCfg, err := restConfigForAPIExport(ctx, cfg, svcCfg.Service.APIExportName)
-	exitOnError(err, "error looking up virtual workspace URL")
+	group, groupCtx := errgroup.WithContext(ctx)
 
-	logger.Info("Using virtual workspace URL", "url", apiExportCfg.Host)
+	group.Go(func() error {
+		logger.Info("Looking up Camel K virtual workspace URL")
+		apiExportCfg, err := restConfigForAPIExport(groupCtx, cfg, svcCfg.Service.APIExports.CamelK.APIExportName)
+		if err != nil {
+			return err
+		}
+		logger.Info("Using Camel K virtual workspace URL", "url", apiExportCfg.Host)
 
-	// Set the operator container image if it runs in-container
-	// FIXME: find a way to retrieve the image
-	// platform.OperatorImage, err = getOperatorImage(ctx, c)
-	// exitOnError(err, "cannot get operator container image")
+		// Set the operator container image if it runs in-container
+		// FIXME: find a way to retrieve the image
+		// platform.OperatorImage, err = getOperatorImage(ctx, c)
+		// exitOnError(err, "cannot get operator container image")
 
-	// Manager
-	mgr, err := kcp.NewClusterAwareManager(apiExportCfg, mgrOptions)
-	exitOnError(err, "")
+		logger.Info("Configuring the Camel K manager")
+		mgr, err := kcp.NewClusterAwareManager(apiExportCfg, mgrOptions)
+		if err != nil {
+			return err
+		}
+		err = mgr.AddHealthzCheck("healthz", healthz.Ping)
+		if err != nil {
+			return err
+		}
+		err = mgr.AddReadyzCheck("readyz", healthz.Ping)
+		if err != nil {
+			return err
+		}
+		c, err := client.NewClient(apiExportCfg, scheme, mgr.GetClient())
+		if err != nil {
+			return err
+		}
+		err = controller.AddToManager(groupCtx, mgr, c)
+		if err != nil {
+			return err
+		}
+		err = apibinding.AddCamelKController(mgr, c, svcCfg)
+		if err != nil {
+			return err
+		}
+		logger.Info("Starting the Camel K manager")
+		return mgr.Start(groupCtx)
+	})
 
-	logger.Info("Configuring the manager")
-	exitOnError(mgr.AddHealthzCheck("healthz", healthz.Ping), "Unable to add health check")
-	exitOnError(mgr.AddReadyzCheck("readyz", healthz.Ping), "Unable to add ready check")
+	group.Go(func() error {
+		logger.Info("Looking up Kaoto virtual workspace URL")
+		apiExportCfg, err := restConfigForAPIExport(groupCtx, cfg, svcCfg.Service.APIExports.Kaoto.APIExportName)
+		if err != nil {
+			return err
+		}
+		logger.Info("Using Kaoto virtual workspace URL", "url", apiExportCfg.Host)
 
-	c, err := client.NewClient(apiExportCfg, scheme, mgr.GetClient())
-	exitOnError(err, "failed to create client")
+		logger.Info("Configuring Kaoto the manager")
+		mgr, err := kcp.NewClusterAwareManager(apiExportCfg, ctrl.Options{
+			LeaderElection:     false,
+			MetricsBindAddress: "0",
+			Scheme:             scheme,
+			EventBroadcaster:   broadcaster,
+		})
+		if err != nil {
+			return err
+		}
+		c, err := client.NewClient(apiExportCfg, scheme, mgr.GetClient())
+		if err != nil {
+			return err
+		}
+		err = apibinding.AddKaotoController(mgr, c, svcCfg)
+		if err != nil {
+			return err
+		}
+		logger.Info("Starting the Kaoto manager")
+		return mgr.Start(groupCtx)
+	})
 
-	exitOnError(controller.AddToManager(ctx, mgr, c), "")
-	exitOnError(apibinding.Add(mgr, c, svcCfg), "")
-
-	logger.Info("Starting the manager")
-	exitOnError(mgr.Start(ctx), "manager exited non-zero")
+	exitOnError(group.Wait(), "managers exited non-zero")
 }
 
 // +kubebuilder:rbac:groups="apis.kcp.io",resources=apiexports,verbs=get;list;watch
