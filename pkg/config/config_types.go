@@ -43,19 +43,34 @@ type ServiceConfiguration struct {
 }
 
 type ServiceConfigurationSpec struct {
-	// The name of the APIExport, in the service workspace,
-	// whose virtual workspace URL is used to configure the
-	// controller manager client.
-	APIExportName string `json:"apiExportName,omitempty"`
+	// The APIExports used to configure the controller managers.
+	APIExports APIExports `json:"apiExports,omitempty"`
+}
+
+type APIExports struct {
+	// The Camel K APIExport used to configure the Camel K manager.
+	CamelK CamelKAPIExport `json:"camel-k,omitempty"`
+	// The Kaoto APIExport used to configure the Kaoto manager.
+	Kaoto KaotoAPIExport `json:"kaoto,omitempty"`
+}
+
+type CamelKAPIExport struct {
+	// The reference to the Camel K APIExport.
+	LocalAPIExportReference `json:",inline,omitempty"`
 
 	// The desired state of the consumer workspace when the
-	// service APIExport is bound into it.
+	// Camel K APIExport is bound into it.
 	OnAPIBinding OnAPIBinding `json:"onApiBinding,omitempty"`
+}
+
+type KaotoAPIExport struct {
+	// The reference to the Kaoto APIExport.
+	LocalAPIExportReference `json:",inline,omitempty"`
 }
 
 type OnAPIBinding struct {
 	// The specification of the default integration platform,
-	// that's created when the service APIExport is bound,
+	// that's created when the Camel K APIExport is bound,
 	// in the consumer workspace.
 	// +optional
 	DefaultPlatform *IntegrationPlatform `json:"createDefaultPlatform,omitempty"`
@@ -74,4 +89,15 @@ type IntegrationPlatform struct {
 type Placement struct {
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 	Spec              schedulingv1alpha1.PlacementSpec `json:"spec,omitempty"`
+}
+
+// LocalAPIExportReference provides the name necessary to resolve an APIExport
+// relative to the local workspace.
+type LocalAPIExportReference struct {
+	// APIExportName is the name of the APIExport.
+	//
+	// +required
+	// +kubebuilder:validation:Required
+	// +kube:validation:MinLength=1
+	APIExportName string `json:"apiExportName"`
 }
