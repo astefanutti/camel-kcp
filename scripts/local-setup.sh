@@ -162,7 +162,7 @@ kubernetesIdentityHash=$(kubectl get apiexport kubernetes -o json | jq -r .statu
 
 # Create service workspace
 ${KUBECTL_KCP_BIN} workspace use root
-${KUBECTL_KCP_BIN} workspace create camel-k --type universal --enter || ${KUBECTL_KCP_BIN} workspace use camel-k
+${KUBECTL_KCP_BIN} workspace create camel-kcp --type universal --enter || ${KUBECTL_KCP_BIN} workspace use camel-kcp
 
 # Bind root compute APIExport
 ${KUBECTL_KCP_BIN} bind apiexport root:compute:kubernetes --name kubernetes
