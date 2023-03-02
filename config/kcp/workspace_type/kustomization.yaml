@@ -16,6 +16,7 @@
 # ---------------------------------------------------------------------------
 
 resources:
-- workspace_type.yaml
+- workspace_type_camel_k.yaml
+- workspace_type_kaoto.yaml
 - cluster_role.yaml
 - cluster_role_binding.yaml
