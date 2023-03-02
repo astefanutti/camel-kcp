@@ -23,7 +23,9 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	networkingv1 "k8s.io/api/networking/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
+	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/util/intstr"
 	appsv1ac "k8s.io/client-go/applyconfigurations/apps/v1"
 	corev1ac "k8s.io/client-go/applyconfigurations/core/v1"
@@ -31,12 +33,94 @@ import (
 	networkingv1ac "k8s.io/client-go/applyconfigurations/networking/v1"
 	rbacv1ac "k8s.io/client-go/applyconfigurations/rbac/v1"
 
+	"sigs.k8s.io/controller-runtime/pkg/builder"
+	"sigs.k8s.io/controller-runtime/pkg/event"
+	"sigs.k8s.io/controller-runtime/pkg/manager"
+	"sigs.k8s.io/controller-runtime/pkg/predicate"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 
+	apisv1alpha1 "github.com/kcp-dev/kcp/pkg/apis/apis/v1alpha1"
+	"github.com/kcp-dev/logicalcluster/v3"
+
 	camelv1 "github.com/apache/camel-k/pkg/apis/camel/v1"
+	"github.com/apache/camel-k/pkg/util/monitoring"
+
+	"github.com/apache/camel-kcp/pkg/client"
+	"github.com/apache/camel-kcp/pkg/config"
+	"github.com/apache/camel-kcp/pkg/platform"
 )
 
-func (r *reconciler) applyKaotoResources(ctx context.Context, request reconcile.Request, camelNamespaceName string) error {
+const (
+	kaotoNamespaceName = "kaoto"
+)
+
+func AddKaotoController(mgr manager.Manager, c client.Client, cfg *config.ServiceConfiguration) error {
+	return builder.ControllerManagedBy(mgr).
+		Named("kaoto-apibinding-controller").
+		For(&apisv1alpha1.APIBinding{}, builder.WithPredicates(
+			predicate.Funcs{
+				// TODO: Is it needed to check whether the binding workspace is being terminated?
+				UpdateFunc: func(e event.UpdateEvent) bool {
+					binding, ok := e.ObjectNew.(*apisv1alpha1.APIBinding)
+					if !ok {
+						return false
+					}
+					if binding.DeletionTimestamp != nil && !binding.DeletionTimestamp.IsZero() {
+						return false
+					}
+					return binding.Status.Phase == apisv1alpha1.APIBindingPhaseBound
+				},
+				DeleteFunc: func(deleteEvent event.DeleteEvent) bool {
+					return false
+				},
+			})).
+		Complete(monitoring.NewInstrumentedReconciler(
+			&kaotoReconciler{
+				reconciler{
+					cfg:      cfg,
+					client:   c,
+					recorder: mgr.GetEventRecorderFor("kaoto-apibinding-controller"),
+				},
+			},
+			schema.GroupVersionKind{
+				Group:   apisv1alpha1.SchemeGroupVersion.Group,
+				Version: apisv1alpha1.SchemeGroupVersion.Version,
+				Kind:    "APIBinding",
+			},
+		))
+}
+
+type kaotoReconciler struct {
+	reconciler
+}
+
+func (r *kaotoReconciler) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {
+	rlog := Log.WithValues("api-binding", "kaoto", "request-name", request.Name)
+	rlog.Info("Reconciling APIBinding")
+
+	// Add the logical cluster to the context
+	ctx = logicalcluster.WithCluster(ctx, logicalcluster.Name(request.ClusterName))
+
+	if err := r.maybeCreateNamespace(ctx, kaotoNamespaceName); err != nil {
+		if errors.IsNotFound(err) {
+			rlog.Debug("Bound APIs are not yet found")
+			return reconcile.Result{Requeue: true}, nil
+		}
+		return reconcile.Result{}, err
+	}
+
+	if err := r.applyKaotoResources(ctx, request, platform.DefaultNamespaceName); err != nil {
+		if errors.IsNotFound(err) {
+			rlog.Debug("Bound APIs are not yet found")
+			return reconcile.Result{Requeue: true}, nil
+		}
+		return reconcile.Result{}, err
+	}
+
+	return reconcile.Result{}, nil
+}
+
+func (r *kaotoReconciler) applyKaotoResources(ctx context.Context, request reconcile.Request, camelNamespaceName string) error {
 	serviceAccount := corev1ac.ServiceAccount("kaoto", kaotoNamespaceName)
 	_, err := r.client.CoreV1().ServiceAccounts(kaotoNamespaceName).
 		Apply(ctx, serviceAccount, metav1.ApplyOptions{FieldManager: applyManager, Force: true})
