@@ -49,6 +49,7 @@ type ServiceConfigurationSpec struct {
 
 type APIExports struct {
 	// The Camel K APIExport used to configure the Camel K manager.
+	// nolint:tagliatelle
 	CamelK CamelKAPIExport `json:"camel-k,omitempty"`
 	// The Kaoto APIExport used to configure the Kaoto manager.
 	Kaoto KaotoAPIExport `json:"kaoto,omitempty"`
