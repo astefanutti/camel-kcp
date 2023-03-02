@@ -15,18 +15,19 @@
 # limitations under the License.
 # ---------------------------------------------------------------------------
 
-apiVersion: rbac.authorization.k8s.io/v1
-kind: ClusterRole
+apiVersion: tenancy.kcp.io/v1alpha1
+kind: WorkspaceType
 metadata:
-  name: system:kcp:camel-workspacetype-use
-rules:
-  - apiGroups:
-      - tenancy.kcp.io
-    resources:
-      - workspacetypes
-    resourceNames:
-      - camel
-      - camel-k
-      - kaoto
-    verbs:
-      - use
+  name: camel
+spec:
+  defaultAPIBindings:
+    - export: kubernetes
+      path: root:compute
+    - export: camel-k
+      path: root:camel-kcp # kpt-set: ${camel-kcp-workspace}
+    - export: kaoto
+      path: root:camel-kcp # kpt-set: ${camel-kcp-workspace}
+  extend:
+    with:
+      - name: universal
+        path: root
