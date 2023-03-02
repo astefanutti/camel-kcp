@@ -17,13 +17,9 @@
 apiVersion: apis.kcp.io/v1alpha1
 kind: APIExport
 metadata:
-  name: camel-kcp
+  name: kaoto
 spec:
   latestResourceSchemas:
-  - today.builds.camel.apache.org
-  - today.camelcatalogs.camel.apache.org
-  - today.integrationkits.camel.apache.org
-  - today.integrationplatforms.camel.apache.org
   - today.integrations.camel.apache.org
   - today.kameletbindings.camel.apache.org
   - today.kamelets.camel.apache.org
@@ -31,38 +27,42 @@ spec:
   - group: ""
     resource: namespaces
     resourceSelector:
-    - name: camel-k
+    - name: kaoto
   - group: ""
     resource: configmaps
-    all: true
+    resourceSelector:
+    - namespace: kaoto
   - group: ""
     resource: secrets
-    all: true
-  - group: ""
-    resource: pods
-    all: true
-    identityHash: IDENTITY_HASH # kpt-set: ${kubernetes-identity-hash}
+    resourceSelector:
+    - namespace: kaoto
+      #  - group: ""
+      #    resource: pods
+      #    all: true
+      #    identityHash: IDENTITY_HASH # kpt-set: ${kubernetes-identity-hash}
   - group: ""
     resource: services
-    all: true
     identityHash: IDENTITY_HASH # kpt-set: ${kubernetes-identity-hash}
+    resourceSelector:
+    - namespace: kaoto
   - group: apps
     resource: deployments
-    all: true
     identityHash: IDENTITY_HASH # kpt-set: ${kubernetes-identity-hash}
-  - group: coordination.k8s.io
-    resource: leases
-    all: true
+    resourceSelector:
+    - namespace: kaoto
+      #  - group: coordination.k8s.io
+      #    resource: leases
+      #    all: true
   - group: networking.k8s.io
     resource: ingresses
-    all: true
     identityHash: IDENTITY_HASH # kpt-set: ${kubernetes-identity-hash}
-  - group: scheduling.kcp.io
-    resource: placements
     resourceSelector:
-    - name: default
-    identityHash: IDENTITY_HASH # kpt-set: ${scheduling-identity-hash}
-  #  Kaoto
+    - namespace: kaoto
+      #  - group: scheduling.kcp.io
+      #    resource: placements
+      #    identityHash: IDENTITY_HASH # kpt-set: ${scheduling-identity-hash}
+      #    resourceSelector:
+      #    - name: default
   - group: ""
     resource: serviceaccounts
     resourceSelector:

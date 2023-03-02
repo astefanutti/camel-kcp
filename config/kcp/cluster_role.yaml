@@ -24,6 +24,7 @@ rules:
   resources:
   - apiexports
   resourceNames:
-  - camel-kcp
+  - camel-k
+  - kaoto
   verbs:
   - bind
