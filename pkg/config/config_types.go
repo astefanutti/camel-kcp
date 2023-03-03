@@ -61,21 +61,32 @@ type CamelKAPIExport struct {
 
 	// The desired state of the consumer workspace when the
 	// Camel K APIExport is bound into it.
-	OnAPIBinding OnAPIBinding `json:"onApiBinding,omitempty"`
+	OnAPIBinding OnCamelKAPIBinding `json:"onApiBinding,omitempty"`
 }
 
 type KaotoAPIExport struct {
 	// The reference to the Kaoto APIExport.
 	LocalAPIExportReference `json:",inline,omitempty"`
+
+	// The desired state of the consumer workspace when the
+	// Kaoto APIExport is bound into it.
+	OnAPIBinding OnKaotoAPIBinding `json:"onApiBinding,omitempty"`
 }
 
-type OnAPIBinding struct {
+type OnCamelKAPIBinding struct {
 	// The specification of the default integration platform,
 	// that's created when the Camel K APIExport is bound,
 	// in the consumer workspace.
 	// +optional
 	DefaultPlatform *IntegrationPlatform `json:"createDefaultPlatform,omitempty"`
 
+	// The specification of the default placement, that's created
+	// when the service APIExport is bound, in the consumer workspace.
+	// +optional
+	DefaultPlacement *Placement `json:"createDefaultPlacement,omitempty"`
+}
+
+type OnKaotoAPIBinding struct {
 	// The specification of the default placement, that's created
 	// when the service APIExport is bound, in the consumer workspace.
 	// +optional

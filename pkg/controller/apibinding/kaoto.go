@@ -101,6 +101,12 @@ func (r *kaotoReconciler) Reconcile(ctx context.Context, request reconcile.Reque
 	// Add the logical cluster to the context
 	ctx = logicalcluster.WithCluster(ctx, logicalcluster.Name(request.ClusterName))
 
+	if placement := r.cfg.Service.APIExports.Kaoto.OnAPIBinding.DefaultPlacement; placement != nil {
+		if err := r.maybeCreatePlacement(ctx, placement); err != nil {
+			return reconcile.Result{}, err
+		}
+	}
+
 	if err := r.maybeCreateNamespace(ctx, kaotoNamespaceName); err != nil {
 		if errors.IsNotFound(err) {
 			rlog.Debug("Bound APIs are not yet found")
