@@ -24,7 +24,10 @@ import (
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/tools/record"
+
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
+
+	schedulingv1alpha1 "github.com/kcp-dev/kcp/pkg/apis/scheduling/v1alpha1"
 
 	"github.com/apache/camel-k/pkg/util/log"
 
@@ -64,4 +67,24 @@ func (r *reconciler) maybeCreateNamespace(ctx context.Context, name string) erro
 	// Use client-go non-caching client
 	_, err = r.client.CoreV1().Namespaces().Create(ctx, namespace, metav1.CreateOptions{})
 	return err
+}
+
+// +kubebuilder:rbac:groups="scheduling.kcp.io",resources=placements,verbs=get;create
+
+func (r *reconciler) maybeCreatePlacement(ctx context.Context, placementConfig *config.Placement) error {
+	placement := &schedulingv1alpha1.Placement{
+		ObjectMeta: placementConfig.ObjectMeta,
+		Spec:       placementConfig.Spec,
+	}
+
+	// Use client-go non-caching client
+	if _, err := r.client.KcpSchedulingV1alpha1().Placements().Get(ctx, placement.Name, metav1.GetOptions{}); errors.IsNotFound(err) {
+		if _, err := r.client.KcpSchedulingV1alpha1().Placements().Create(ctx, placement, metav1.CreateOptions{}); err != nil {
+			return err
+		}
+	} else if err != nil {
+		return err
+	}
+
+	return nil
 }

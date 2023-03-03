@@ -21,7 +21,6 @@ import (
 	"context"
 
 	"k8s.io/apimachinery/pkg/api/errors"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 
 	"sigs.k8s.io/controller-runtime/pkg/builder"
@@ -34,7 +33,6 @@ import (
 	"github.com/kcp-dev/logicalcluster/v3"
 
 	apisv1alpha1 "github.com/kcp-dev/kcp/pkg/apis/apis/v1alpha1"
-	schedulingv1alpha1 "github.com/kcp-dev/kcp/pkg/apis/scheduling/v1alpha1"
 
 	camelv1 "github.com/apache/camel-k/pkg/apis/camel/v1"
 	"github.com/apache/camel-k/pkg/util/monitoring"
@@ -134,26 +132,6 @@ func (r *camelKReconciler) maybeCreatePlatform(ctx context.Context, platformConf
 	// Use the controller-runtime caching client
 	if err := r.client.Get(ctx, ctrl.ObjectKeyFromObject(ip), ip); errors.IsNotFound(err) {
 		return r.client.Create(ctx, ip)
-	} else if err != nil {
-		return err
-	}
-
-	return nil
-}
-
-// +kubebuilder:rbac:groups="scheduling.kcp.io",resources=placements,verbs=get;create
-
-func (r *camelKReconciler) maybeCreatePlacement(ctx context.Context, placementConfig *config.Placement) error {
-	placement := &schedulingv1alpha1.Placement{
-		ObjectMeta: placementConfig.ObjectMeta,
-		Spec:       placementConfig.Spec,
-	}
-
-	// Use client-go non-caching client
-	if _, err := r.client.KcpSchedulingV1alpha1().Placements().Get(ctx, placement.Name, metav1.GetOptions{}); errors.IsNotFound(err) {
-		if _, err := r.client.KcpSchedulingV1alpha1().Placements().Create(ctx, placement, metav1.CreateOptions{}); err != nil {
-			return err
-		}
 	} else if err != nil {
 		return err
 	}
