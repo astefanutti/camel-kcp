@@ -24,10 +24,32 @@ service:
               group: workload.kcp.io
               resource: synctargets
               version: v1alpha1
-            namespaceSelector: {}
+            namespaceSelector:
+              matchExpressions:
+              - key: kubernetes.io/metadata.name
+                operator: NotIn
+                values:
+                - kaoto
             locationSelectors:
             - matchExpressions:
               - key: org.apache.camel/data-plane
                 operator: Exists
     kaoto:
       apiExportName: kaoto
+      onApiBinding:
+        createDefaultPlacement:
+          metadata:
+            name: kaoto
+          spec:
+            locationWorkspace: root:camel-kcp # kpt-set: ${camel-kcp-workspace}
+            locationResource:
+              group: workload.kcp.io
+              resource: synctargets
+              version: v1alpha1
+            namespaceSelector:
+              matchLabels:
+                kubernetes.io/metadata.name: kaoto
+            locationSelectors:
+            - matchExpressions:
+              - key: org.apache.camel/data-plane
+                operator: Exists
