@@ -64,6 +64,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/kcp"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 	ctrlzap "sigs.k8s.io/controller-runtime/pkg/log/zap"
+	"sigs.k8s.io/controller-runtime/pkg/manager"
 
 	apisv1alpha1 "github.com/kcp-dev/kcp/pkg/apis/apis/v1alpha1"
 	"github.com/kcp-dev/kcp/pkg/apis/third_party/conditions/util/conditions"
@@ -223,9 +224,17 @@ func main() {
 
 	group, groupCtx := errgroup.WithContext(ctx)
 
-	group.Go(func() error {
+	// TODO: revisit if/when controller-runtime supports multiple clusters / clients
+	group.Go(startCamelKManager(groupCtx, cfg, svcCfg, mgrOptions))
+	group.Go(startKaotoManager(groupCtx, cfg, svcCfg, broadcaster))
+
+	exitOnError(group.Wait(), "managers exited non-zero")
+}
+
+func startCamelKManager(ctx context.Context, cfg *rest.Config, svcCfg *config.ServiceConfiguration, mgrOptions manager.Options) func() error {
+	return func() error {
 		logger.Info("Looking up Camel K virtual workspace URL")
-		apiExportCfg, err := restConfigForAPIExport(groupCtx, cfg, svcCfg.Service.APIExports.CamelK.APIExportName)
+		apiExportCfg, err := restConfigForAPIExport(ctx, cfg, svcCfg.Service.APIExports.CamelK.APIExportName)
 		if err != nil {
 			return err
 		}
@@ -253,7 +262,7 @@ func main() {
 		if err != nil {
 			return err
 		}
-		err = controller.AddToManager(groupCtx, mgr, c)
+		err = controller.AddToManager(ctx, mgr, c)
 		if err != nil {
 			return err
 		}
@@ -262,12 +271,14 @@ func main() {
 			return err
 		}
 		logger.Info("Starting the Camel K manager")
-		return mgr.Start(groupCtx)
-	})
+		return mgr.Start(ctx)
+	}
+}
 
-	group.Go(func() error {
+func startKaotoManager(ctx context.Context, cfg *rest.Config, svcCfg *config.ServiceConfiguration, broadcaster record.EventBroadcaster) func() error {
+	return func() error {
 		logger.Info("Looking up Kaoto virtual workspace URL")
-		apiExportCfg, err := restConfigForAPIExport(groupCtx, cfg, svcCfg.Service.APIExports.Kaoto.APIExportName)
+		apiExportCfg, err := restConfigForAPIExport(ctx, cfg, svcCfg.Service.APIExports.Kaoto.APIExportName)
 		if err != nil {
 			return err
 		}
@@ -292,10 +303,8 @@ func main() {
 			return err
 		}
 		logger.Info("Starting the Kaoto manager")
-		return mgr.Start(groupCtx)
-	})
-
-	exitOnError(group.Wait(), "managers exited non-zero")
+		return mgr.Start(ctx)
+	}
 }
 
 // +kubebuilder:rbac:groups="apis.kcp.io",resources=apiexports,verbs=get;list;watch
