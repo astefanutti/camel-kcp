@@ -19,10 +19,6 @@ kind: APIExport
 metadata:
   name: kaoto
 spec:
-  latestResourceSchemas:
-  - today.integrations.camel.apache.org
-  - today.kameletbindings.camel.apache.org
-  - today.kamelets.camel.apache.org
   permissionClaims:
   - group: ""
     resource: namespaces
