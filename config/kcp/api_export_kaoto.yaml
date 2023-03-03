@@ -54,11 +54,11 @@ spec:
     identityHash: IDENTITY_HASH # kpt-set: ${kubernetes-identity-hash}
     resourceSelector:
     - namespace: kaoto
-      #  - group: scheduling.kcp.io
-      #    resource: placements
-      #    identityHash: IDENTITY_HASH # kpt-set: ${scheduling-identity-hash}
-      #    resourceSelector:
-      #    - name: default
+  - group: scheduling.kcp.io
+    resource: placements
+    identityHash: IDENTITY_HASH # kpt-set: ${scheduling-identity-hash}
+    resourceSelector:
+    - name: default
   - group: ""
     resource: serviceaccounts
     resourceSelector:
