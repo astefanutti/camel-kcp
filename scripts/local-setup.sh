@@ -224,7 +224,7 @@ for cluster in $CLUSTERS; do
   echo "Deploying Ingress controller to ${cluster}"
   kubeconfig=${TEMP_DIR}/"${cluster}".kubeconfig
   VERSION=controller-v1.6.4
-  curl https://raw.githubusercontent.com/kubernetes/ingress-nginx/"${VERSION}"/deploy/static/provider/kind/deploy.yaml | sed "s/--publish-status-address=localhost/--report-node-internal-ip-address/g" | kubectl --kubeconfig "${kubeconfig}" apply -f -
+  curl https://raw.githubusercontent.com/kubernetes/ingress-nginx/"${VERSION}"/deploy/static/provider/kind/deploy.yaml | sed "s/--publish-status-address=localhost/--report-node-internal-ip-address\\n        - --status-update-interval=10/g" | kubectl --kubeconfig "${kubeconfig}" apply -f -
   kubectl --kubeconfig "${kubeconfig}" annotate ingressclass nginx "ingressclass.kubernetes.io/is-default-class=true"
   echo "Waiting for deployments to be ready ..."
   kubectl --kubeconfig "${kubeconfig}" -n ingress-nginx wait --timeout=300s --for=condition=Available deployments --all
