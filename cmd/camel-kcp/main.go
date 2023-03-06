@@ -73,14 +73,14 @@ import (
 
 	"github.com/apache/camel-k/pkg/apis"
 	v1 "github.com/apache/camel-k/pkg/apis/camel/v1"
-	"github.com/apache/camel-k/pkg/controller"
+	camelk "github.com/apache/camel-k/pkg/controller"
 	"github.com/apache/camel-k/pkg/event"
 	"github.com/apache/camel-k/pkg/util/defaults"
 	logutil "github.com/apache/camel-k/pkg/util/log"
 
 	"github.com/apache/camel-kcp/pkg/client"
 	"github.com/apache/camel-kcp/pkg/config"
-	"github.com/apache/camel-kcp/pkg/controller/apibinding"
+	"github.com/apache/camel-kcp/pkg/controller"
 	"github.com/apache/camel-kcp/pkg/platform"
 )
 
@@ -262,11 +262,11 @@ func startCamelKManager(ctx context.Context, cfg *rest.Config, svcCfg *config.Se
 		if err != nil {
 			return err
 		}
-		err = controller.AddToManager(ctx, mgr, c)
+		err = camelk.AddToManager(ctx, mgr, c)
 		if err != nil {
 			return err
 		}
-		err = apibinding.AddCamelKController(mgr, c, svcCfg)
+		err = controller.AddCamelKController(mgr, c, svcCfg)
 		if err != nil {
 			return err
 		}
@@ -298,11 +298,11 @@ func startKaotoManager(ctx context.Context, cfg *rest.Config, svcCfg *config.Ser
 		if err != nil {
 			return err
 		}
-		err = apibinding.AddKaotoController(mgr, c, svcCfg)
+		err = controller.AddKaotoController(mgr, c, svcCfg)
 		if err != nil {
 			return err
 		}
-		err = apibinding.AddKaotoIngressController(mgr, c, svcCfg)
+		err = controller.AddKaotoIngressController(mgr, c, svcCfg)
 		if err != nil {
 			return err
 		}
