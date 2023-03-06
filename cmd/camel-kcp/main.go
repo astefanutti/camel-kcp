@@ -302,6 +302,10 @@ func startKaotoManager(ctx context.Context, cfg *rest.Config, svcCfg *config.Ser
 		if err != nil {
 			return err
 		}
+		err = apibinding.AddKaotoIngressController(mgr, c, svcCfg)
+		if err != nil {
+			return err
+		}
 		logger.Info("Starting the Kaoto manager")
 		return mgr.Start(ctx)
 	}

@@ -50,9 +50,7 @@ import (
 	"github.com/apache/camel-kcp/pkg/platform"
 )
 
-const (
-	kaotoNamespaceName = "kaoto"
-)
+const kaotoNamespaceName = "kaoto"
 
 func AddKaotoController(mgr manager.Manager, c client.Client, cfg *config.ServiceConfiguration) error {
 	return builder.ControllerManagedBy(mgr).
