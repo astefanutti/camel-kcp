@@ -141,7 +141,7 @@ jobs:
 
       - name: Install Ingress controller
         run: |
-          VERSION=controller-v1.2.1
+          VERSION=controller-v1.6.4
           echo "Deploying Ingress controller to data plane cluster"
           kubectl config use-context kind-kcp-data-cluster
           curl https://raw.githubusercontent.com/kubernetes/ingress-nginx/"${VERSION}"/deploy/static/provider/kind/deploy.yaml | sed "s/--publish-status-address=localhost/--report-node-internal-ip-address/g" | kubectl apply -f -
