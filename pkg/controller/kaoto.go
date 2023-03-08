@@ -141,6 +141,10 @@ func (r *kaotoReconciler) applyKaotoResources(ctx context.Context, request recon
 			WithAPIGroups("").
 			WithResources("pods").
 			WithVerbs("get", "list", "watch"),
+		rbacv1ac.PolicyRule().
+			WithAPIGroups("").
+			WithResources("pods/log").
+			WithVerbs("get"),
 	)
 	_, err = r.client.RbacV1().ClusterRoles().
 		Apply(ctx, clusterRole, metav1.ApplyOptions{FieldManager: applyManager, Force: true})
