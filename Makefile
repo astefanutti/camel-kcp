@@ -158,7 +158,7 @@ KIND ?= $(LOCALBIN)/kind
 ## Tool Versions
 CONTROLLER_TOOLS_VERSION ?= v0.8.0
 KUSTOMIZE_VERSION ?= v4.5.4
-KIND_VERSION ?= v0.14.0
+KIND_VERSION ?= v0.17.0
 
 .PHONY: controller-gen
 controller-gen: $(CONTROLLER_GEN) ## Download controller-gen locally if necessary
