@@ -20,10 +20,10 @@ package client
 import (
 	schedulingv1alpha1 "github.com/kcp-dev/kcp/pkg/client/clientset/versioned/typed/scheduling/v1alpha1"
 
-	"github.com/apache/camel-k/pkg/client"
+	camel "github.com/apache/camel-k/pkg/client"
 )
 
 type Client interface {
-	client.Client
+	camel.Client
 	KcpSchedulingV1alpha1() schedulingv1alpha1.SchedulingV1alpha1Interface
 }
