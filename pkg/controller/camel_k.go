@@ -26,6 +26,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/builder"
 	ctrl "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/event"
+	"sigs.k8s.io/controller-runtime/pkg/kontext"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
@@ -87,7 +88,7 @@ func (r *camelKReconciler) Reconcile(ctx context.Context, request reconcile.Requ
 	rlog.Info("Reconciling APIBinding")
 
 	// Add the logical cluster to the context
-	ctx = logicalcluster.WithCluster(ctx, logicalcluster.Name(request.ClusterName))
+	ctx = kontext.WithCluster(ctx, logicalcluster.Name(request.ClusterName))
 
 	if ip := r.cfg.Service.APIExports.CamelK.OnAPIBinding.DefaultPlatform; ip != nil {
 		if ip.Namespace == "" {

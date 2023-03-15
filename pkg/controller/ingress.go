@@ -30,6 +30,7 @@ import (
 
 	"sigs.k8s.io/controller-runtime/pkg/builder"
 	"sigs.k8s.io/controller-runtime/pkg/event"
+	"sigs.k8s.io/controller-runtime/pkg/kontext"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
@@ -92,7 +93,7 @@ func (r *kaotoIngressReconciler) Reconcile(ctx context.Context, request reconcil
 	rlog.Info("Reconciling Ingress")
 
 	// Add the logical cluster to the context
-	ctx = logicalcluster.WithCluster(ctx, logicalcluster.Name(request.ClusterName))
+	ctx = kontext.WithCluster(ctx, logicalcluster.Name(request.ClusterName))
 
 	ingress, err := r.client.NetworkingV1().Ingresses(request.Namespace).Get(ctx, request.Name, metav1.GetOptions{})
 	if err != nil && !errors.IsNotFound(err) {

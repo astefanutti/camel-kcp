@@ -1146,8 +1146,9 @@ github.com/jung-kurt/gofpdf v1.0.3-0.20190309125859-24315acbbda5/go.mod h1:7Id9E
 github.com/k0kubun/colorstring v0.0.0-20150214042306-9440f1994b88/go.mod h1:3w7q1U84EfirKl04SVQ/s7nPm1ZPhiXd34z40TNz36k=
 github.com/karrick/godirwalk v1.16.1/go.mod h1:j4mkqPuvaLI8mp1DroR3P6ad7cyYd4c1qeJ3RV7ULlk=
 github.com/kcp-dev/apimachinery v0.0.0-20221102195355-d65878bc16be/go.mod h1:qnvUHkdxOrNzX17yX+z8r81CZEBuFdveNzWqFlwZ55w=
-github.com/kcp-dev/apimachinery/v2 v2.0.0-alpha.0 h1:fb+3CdDlxvnK+o1wm3IcDbD+MJndMUa17EUGqYORsvg=
 github.com/kcp-dev/apimachinery/v2 v2.0.0-alpha.0/go.mod h1:dn1hXHMY9E6JbyOGa0qXt1Dq4akd/jHMZOpFhJoX7q4=
+github.com/kcp-dev/apimachinery/v2 v2.0.0-alpha.0.0.20230113171111-a259d60637ec h1:/6pOI6YZvFpT57OjI8fhwWNWljBpTz9YCtOzD0j85aM=
+github.com/kcp-dev/apimachinery/v2 v2.0.0-alpha.0.0.20230113171111-a259d60637ec/go.mod h1:/yLSBkD9nouVinEbsti9NnrfA6AUvwSDB0iYrKyjWuA=
 github.com/kcp-dev/client-go v0.0.0-20221215092857-c1e5154a9825/go.mod h1:sj0r6sAHNsfEpA37uLTVGZj9TMQQWjBXk4rbpcIDZ7U=
 github.com/kcp-dev/client-go v0.0.0-20230126185145-aeff170a288b h1:7Raw5C50fye3c7FkltMWI4iAarVI5DQk9fnO6kkWd1s=
 github.com/kcp-dev/client-go v0.0.0-20230126185145-aeff170a288b/go.mod h1:sj0r6sAHNsfEpA37uLTVGZj9TMQQWjBXk4rbpcIDZ7U=
@@ -1189,8 +1190,9 @@ github.com/kcp-dev/kubernetes/staging/src/k8s.io/pod-security-admission v0.0.0-2
 github.com/kcp-dev/kubernetes/staging/src/k8s.io/sample-apiserver v0.0.0-20230210192259-aaa28aa88b2d/go.mod h1:axQRkgV/3f5LpGz+rBiRMp4kZJcJNJmBrZIfNJ12hBc=
 github.com/kcp-dev/logicalcluster/v2 v2.0.0-alpha.1/go.mod h1:lfWJL764jKFJxZWOGuFuT3PCCLPo6lV5Cl8P7u9T05g=
 github.com/kcp-dev/logicalcluster/v3 v3.0.0/go.mod h1:6rb68Tntup98cRr9+50rvSDxUbfqrC1yQ/T6RiZcSgA=
-github.com/kcp-dev/logicalcluster/v3 v3.0.2 h1:U7wnYPgZLJt/X2G1/SYnynW6WnRmohxIvKaMwNL9BHM=
 github.com/kcp-dev/logicalcluster/v3 v3.0.2/go.mod h1:6rb68Tntup98cRr9+50rvSDxUbfqrC1yQ/T6RiZcSgA=
+github.com/kcp-dev/logicalcluster/v3 v3.0.4 h1:q7KngML/QM7sWl8aVzmfZF0TPMnBwYNxsPKfwUvvBvU=
+github.com/kcp-dev/logicalcluster/v3 v3.0.4/go.mod h1:EWBUBxdr49fUB1cLMO4nOdBWmYifLbP1LfoL20KkXYY=
 github.com/kelseyhightower/envconfig v1.4.0 h1:Im6hONhd3pLkfDFsbRgu68RDNkGF1r3dvMUtDTo2cv8=
 github.com/kelseyhightower/envconfig v1.4.0/go.mod h1:cccZRl6mQpaq41TPp5QxidR+Sa3axMbJDNb//FQX6Gg=
 github.com/kisielk/errcheck v1.1.0/go.mod h1:EZBBE59ingxPouuu3KfxchcWSUPOHkagtvWXihfKN4Q=
