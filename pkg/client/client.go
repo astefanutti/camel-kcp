@@ -18,11 +18,7 @@ limitations under the License.
 package client
 
 import (
-	"net/http"
-
 	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/apimachinery/pkg/runtime/schema"
-	"k8s.io/apimachinery/pkg/runtime/serializer"
 	"k8s.io/client-go/discovery"
 	"k8s.io/client-go/dynamic"
 	"k8s.io/client-go/kubernetes"
@@ -36,21 +32,21 @@ import (
 	kcpclientset "github.com/kcp-dev/kcp/pkg/client/clientset/versioned"
 	schedulingv1alpha1 "github.com/kcp-dev/kcp/pkg/client/clientset/versioned/typed/scheduling/v1alpha1"
 
-	"github.com/apache/camel-k/pkg/client"
+	camelclient "github.com/apache/camel-k/pkg/client"
 	camel "github.com/apache/camel-k/pkg/client/camel/clientset/versioned"
 	camelv1 "github.com/apache/camel-k/pkg/client/camel/clientset/versioned/typed/camel/v1"
 	camelv1alpha1 "github.com/apache/camel-k/pkg/client/camel/clientset/versioned/typed/camel/v1alpha1"
 )
 
-type kcpClient struct {
+type client struct {
 	ctrl.Client
 	discovery discovery.DiscoveryInterface
 	kubernetes.Interface
-	kcp        kcpclientset.Interface
-	camel      camel.Interface
-	scheme     *runtime.Scheme
-	config     *rest.Config
-	restClient rest.Interface
+	kcp    kcpclientset.Interface
+	camel  camel.Interface
+	scheme *runtime.Scheme
+	config *rest.Config
+	rest   rest.Interface
 }
 
 func NewClient(cfg *rest.Config, scheme *runtime.Scheme, c ctrl.Client) (Client, error) {
@@ -58,76 +54,76 @@ func NewClient(cfg *rest.Config, scheme *runtime.Scheme, c ctrl.Client) (Client,
 	if err != nil {
 		return nil, err
 	}
-	discoveryClient, err := newClusterAwareDiscovery(cfg)
+	discoveryClient, err := NewClusterAwareDiscovery(cfg)
 	if err != nil {
 		return nil, err
 	}
-	clientset, err := kubernetes.NewForConfigAndClient(cfg, httpClient)
+	kubeClient, err := kubernetes.NewForConfigAndClient(cfg, httpClient)
 	if err != nil {
 		return nil, err
 	}
-	kcpClientSet, err := kcpclientset.NewForConfigAndClient(cfg, httpClient)
+	kcpClient, err := kcpclientset.NewForConfigAndClient(cfg, httpClient)
 	if err != nil {
 		return nil, err
 	}
-	camelClientset, err := camel.NewForConfigAndClient(cfg, httpClient)
+	camelClient, err := camel.NewForConfigAndClient(cfg, httpClient)
 	if err != nil {
 		return nil, err
 	}
-	restClient, err := newRESTClientForConfigAndClient(cfg, httpClient)
+	restClient, err := NewRESTClientForConfigAndClient(cfg, httpClient)
 	if err != nil {
 		return nil, err
 	}
 
-	return &kcpClient{
-		Client:     c,
-		discovery:  discoveryClient,
-		Interface:  clientset,
-		kcp:        kcpClientSet,
-		camel:      camelClientset,
-		scheme:     scheme,
-		config:     cfg,
-		restClient: restClient,
+	return &client{
+		Client:    c,
+		discovery: discoveryClient,
+		Interface: kubeClient,
+		kcp:       kcpClient,
+		camel:     camelClient,
+		scheme:    scheme,
+		config:    cfg,
+		rest:      restClient,
 	}, nil
 }
 
-var _ Client = &kcpClient{}
+var _ Client = &client{}
 
-func (c *kcpClient) Discovery() discovery.DiscoveryInterface {
+func (c *client) Discovery() discovery.DiscoveryInterface {
 	return c.discovery
 }
 
-func (c *kcpClient) KcpSchedulingV1alpha1() schedulingv1alpha1.SchedulingV1alpha1Interface {
+func (c *client) KcpSchedulingV1alpha1() schedulingv1alpha1.SchedulingV1alpha1Interface {
 	return c.kcp.SchedulingV1alpha1()
 }
 
-func (c *kcpClient) CamelV1() camelv1.CamelV1Interface {
+func (c *client) CamelV1() camelv1.CamelV1Interface {
 	return c.camel.CamelV1()
 }
 
-func (c *kcpClient) CamelV1alpha1() camelv1alpha1.CamelV1alpha1Interface {
+func (c *client) CamelV1alpha1() camelv1alpha1.CamelV1alpha1Interface {
 	return c.camel.CamelV1alpha1()
 }
 
-func (c *kcpClient) GetScheme() *runtime.Scheme {
+func (c *client) GetScheme() *runtime.Scheme {
 	return c.scheme
 }
 
-func (c *kcpClient) GetConfig() *rest.Config {
+func (c *client) GetConfig() *rest.Config {
 	return c.config
 }
 
-func (c *kcpClient) GetCurrentNamespace(kubeConfig string) (string, error) {
-	return client.GetCurrentNamespace(kubeConfig)
+func (c *client) GetCurrentNamespace(kubeConfig string) (string, error) {
+	return camelclient.GetCurrentNamespace(kubeConfig)
 }
 
-func (c *kcpClient) ServerOrClientSideApplier() client.ServerOrClientSideApplier {
-	return client.ServerOrClientSideApplier{
+func (c *client) ServerOrClientSideApplier() camelclient.ServerOrClientSideApplier {
+	return camelclient.ServerOrClientSideApplier{
 		Client: c,
 	}
 }
 
-func (c *kcpClient) ScalesClient() (scale.ScalesGetter, error) {
+func (c *client) ScalesClient() (scale.ScalesGetter, error) {
 	// Polymorphic scale client
 	groupResources, err := restmapper.GetAPIGroupResources(c.Discovery())
 	if err != nil {
@@ -135,26 +131,5 @@ func (c *kcpClient) ScalesClient() (scale.ScalesGetter, error) {
 	}
 	mapper := restmapper.NewDiscoveryRESTMapper(groupResources)
 	resolver := scale.NewDiscoveryScaleKindResolver(c.Discovery())
-	return scale.New(c.restClient, mapper, dynamic.LegacyAPIPathResolverFunc, resolver), nil
-}
-
-// newClusterAwareDiscovery returns a discovery.DiscoveryInterface that works with APIExport virtual workspace API server.
-func newClusterAwareDiscovery(config *rest.Config) (discovery.DiscoveryInterface, error) {
-	c := rest.CopyConfig(config)
-	c.Host += "/clusters/*"
-	return discovery.NewDiscoveryClientForConfig(c)
-}
-
-var scaleConverter = scale.NewScaleConverter()
-var codecs = serializer.NewCodecFactory(scaleConverter.Scheme())
-
-func newRESTClientForConfigAndClient(config *rest.Config, httpClient *http.Client) (*rest.RESTClient, error) {
-	cfg := rest.CopyConfig(config)
-	// so that the RESTClientFor doesn't complain
-	cfg.GroupVersion = &schema.GroupVersion{}
-	cfg.NegotiatedSerializer = codecs.WithoutConversion()
-	if len(cfg.UserAgent) == 0 {
-		cfg.UserAgent = rest.DefaultKubernetesUserAgent()
-	}
-	return rest.RESTClientForConfigAndClient(cfg, httpClient)
+	return scale.New(c.rest, mapper, dynamic.LegacyAPIPathResolverFunc, resolver), nil
 }

@@ -22,6 +22,13 @@ import (
 	// Import all Kubernetes client auth plugins (e.g. Azure, GCP, OIDC, etc.)
 	// to ensure that exec-entrypoint and run can make use of them.
 	_ "k8s.io/client-go/plugin/pkg/client/auth"
+
+	"k8s.io/apimachinery/pkg/api/meta"
+	"k8s.io/client-go/discovery"
+	"k8s.io/client-go/dynamic"
+	"k8s.io/client-go/rest"
+	"k8s.io/client-go/restmapper"
+	"k8s.io/client-go/scale"
 	"k8s.io/client-go/tools/clientcmd"
 	clientcmdapi "k8s.io/client-go/tools/clientcmd/api"
 
@@ -34,12 +41,16 @@ import (
 	camel "github.com/apache/camel-k/pkg/client/camel/clientset/versioned"
 	camelv1 "github.com/apache/camel-k/pkg/client/camel/clientset/versioned/typed/camel/v1"
 	camelv1alpha1 "github.com/apache/camel-k/pkg/client/camel/clientset/versioned/typed/camel/v1alpha1"
+
+	"github.com/apache/camel-kcp/pkg/client"
 )
 
 type Client interface {
 	Core() kubernetes.ClusterInterface
 	Kcp() kcpclientset.ClusterInterface
 	Camel
+	Scale() scale.ScalesGetter
+	Mapper() meta.RESTMapper
 }
 
 type Camel interface {
@@ -47,25 +58,37 @@ type Camel interface {
 	CamelV1alpha1() camelv1alpha1.CamelV1alpha1Interface
 }
 
-type client struct {
-	core  kubernetes.ClusterInterface
-	kcp   kcpclientset.ClusterInterface
-	camel camel.Interface
+type testClient struct {
+	core      kubernetes.ClusterInterface
+	kcp       kcpclientset.ClusterInterface
+	scale     scale.ScalesGetter
+	camel     camel.Interface
+	discovery discovery.DiscoveryInterface
+	mapper    meta.RESTMapper
+	rest      rest.Interface
 }
 
-func (t *client) Core() kubernetes.ClusterInterface {
+func (t *testClient) Core() kubernetes.ClusterInterface {
 	return t.core
 }
 
-func (t *client) Kcp() kcpclientset.ClusterInterface {
+func (t *testClient) Kcp() kcpclientset.ClusterInterface {
 	return t.kcp
 }
 
-func (t *client) CamelV1() camelv1.CamelV1Interface {
+func (t *testClient) Mapper() meta.RESTMapper {
+	return t.mapper
+}
+
+func (t *testClient) Scale() scale.ScalesGetter {
+	return t.scale
+}
+
+func (t *testClient) CamelV1() camelv1.CamelV1Interface {
 	return t.camel.CamelV1()
 }
 
-func (t *client) CamelV1alpha1() camelv1alpha1.CamelV1alpha1Interface {
+func (t *testClient) CamelV1alpha1() camelv1alpha1.CamelV1alpha1Interface {
 	return t.camel.CamelV1alpha1()
 }
 
@@ -97,14 +120,52 @@ func newTestClient() (Client, error) {
 		return nil, err
 	}
 
-	camelClientset, err := camel.NewForConfigAndClient(cfg, httpClient)
+	camelClient, err := camel.NewForConfigAndClient(cfg, httpClient)
 	if err != nil {
 		return nil, err
 	}
 
-	return &client{
-		core:  kubeClient,
-		kcp:   kcpClient,
-		camel: camelClientset,
+	discoveryClient, err := client.NewClusterAwareDiscovery(cfg)
+	if err != nil {
+		return nil, err
+	}
+
+	restMapper, err := newRESTMapper(discoveryClient)
+	if err != nil {
+		return nil, err
+	}
+
+	restClient, err := client.NewRESTClientForConfigAndClient(cfg, httpClient)
+	if err != nil {
+		return nil, err
+	}
+
+	scaleClient, err := newScaleClient(discoveryClient, restMapper, restClient)
+	if err != nil {
+		return nil, err
+	}
+
+	return &testClient{
+		core:      kubeClient,
+		kcp:       kcpClient,
+		scale:     scaleClient,
+		camel:     camelClient,
+		discovery: discoveryClient,
+		mapper:    restMapper,
+		rest:      restClient,
 	}, nil
+}
+
+func newRESTMapper(d discovery.DiscoveryInterface) (meta.RESTMapper, error) {
+	groupResources, err := restmapper.GetAPIGroupResources(d)
+	if err != nil {
+		return nil, err
+	}
+	return restmapper.NewDiscoveryRESTMapper(groupResources), nil
+}
+
+// newScaleClient returns a polymorphic scale client
+func newScaleClient(d discovery.DiscoveryInterface, m meta.RESTMapper, r rest.Interface) (scale.ScalesGetter, error) {
+	resolver := scale.NewDiscoveryScaleKindResolver(d)
+	return scale.New(r, m, dynamic.LegacyAPIPathResolverFunc, resolver), nil
 }
