@@ -23,6 +23,7 @@ import (
 	"net/http"
 	"net/url"
 	"testing"
+	"time"
 
 	. "github.com/onsi/gomega"
 
@@ -82,6 +83,9 @@ from:
 
 	test.Eventually(Integration(test, namespace, name), TestTimeoutLong).
 		Should(WithTransform(ConditionStatus(camelv1.IntegrationConditionReady), Equal(corev1.ConditionTrue)))
+
+	test.Consistently(Scale(test, Integration(test, namespace, name)), 15*time.Second).
+		Should(WithTransform(StatusReplicas, Equal(1)))
 
 	test.Eventually(Ingress(test, namespace, name), TestTimeoutShort).
 		Should(WithTransform(LoadBalancerIngresses, HaveLen(1)))
