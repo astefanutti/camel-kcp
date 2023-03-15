@@ -35,6 +35,7 @@ import (
 
 	"sigs.k8s.io/controller-runtime/pkg/builder"
 	"sigs.k8s.io/controller-runtime/pkg/event"
+	"sigs.k8s.io/controller-runtime/pkg/kontext"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
@@ -97,7 +98,7 @@ func (r *kaotoReconciler) Reconcile(ctx context.Context, request reconcile.Reque
 	rlog.Info("Reconciling APIBinding")
 
 	// Add the logical cluster to the context
-	ctx = logicalcluster.WithCluster(ctx, logicalcluster.Name(request.ClusterName))
+	ctx = kontext.WithCluster(ctx, logicalcluster.Name(request.ClusterName))
 
 	if placement := r.cfg.Service.APIExports.Kaoto.OnAPIBinding.DefaultPlacement; placement != nil {
 		if err := r.maybeCreatePlacement(ctx, placement); err != nil {

@@ -24,6 +24,8 @@ import (
 
 	corev1 "k8s.io/api/core/v1"
 
+	"sigs.k8s.io/controller-runtime/pkg/kontext"
+
 	"github.com/kcp-dev/logicalcluster/v3"
 
 	tenancyv1alpha1 "github.com/kcp-dev/kcp/pkg/apis/tenancy/v1alpha1"
@@ -58,9 +60,9 @@ type inside interface {
 func Inside[T inside](ctx context.Context, object T) context.Context {
 	switch o := any(object).(type) {
 	case *tenancyv1alpha1.Workspace:
-		return logicalcluster.WithCluster(ctx, logicalcluster.Name(logicalcluster.From(o).Path().Join(o.Name).String()))
+		return kontext.WithCluster(ctx, logicalcluster.Name(logicalcluster.From(o).Path().Join(o.Name).String()))
 	case *corev1.Namespace:
-		return logicalcluster.WithCluster(ctx, logicalcluster.From(o))
+		return kontext.WithCluster(ctx, logicalcluster.From(o))
 	default:
 		return ctx
 	}
