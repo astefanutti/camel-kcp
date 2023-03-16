@@ -22,6 +22,7 @@ import (
 
 	autoscalingv1 "k8s.io/api/autoscaling/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime/schema"
 
 	ctrl "sigs.k8s.io/controller-runtime/pkg/client"
 
@@ -32,11 +33,9 @@ func Scale[T ctrl.Object](t Test, provider func(g gomega.Gomega) T) func(g gomeg
 	return func(g gomega.Gomega) *autoscalingv1.Scale {
 		object := provider(g)
 
-		mapping, err := t.Client().Mapper().RESTMapping(object.GetObjectKind().GroupVersionKind().GroupKind())
-		g.Expect(err).NotTo(gomega.HaveOccurred())
-
-		scale, err := t.Client().Scale().Scales(object.GetNamespace()).
-			Get(logicalcluster.WithCluster(t.Ctx(), logicalcluster.From(object)), mapping.Resource.GroupResource(), object.GetName(), metav1.GetOptions{})
+		// FIXME: Remove hard-coded GR
+		scale, err := t.Client().Scale().Cluster(logicalcluster.From(object).Path()).Scales(object.GetNamespace()).
+			Get(t.Ctx(), schema.GroupResource{Group: "camel.apache.org", Resource: "integrations"}, object.GetName(), metav1.GetOptions{})
 		g.Expect(err).NotTo(gomega.HaveOccurred())
 
 		return scale
