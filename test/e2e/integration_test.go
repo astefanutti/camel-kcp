@@ -54,6 +54,8 @@ func TestIntegration(t *testing.T) {
 			Name: name,
 		},
 		Spec: camelv1.IntegrationSpec{
+			// Set the replicas to comply with the scale sub-resource behavior
+			Replicas: pointer.Int32(1),
 			Flows: []camelv1.Flow{
 				Flow(test, `
 from:
