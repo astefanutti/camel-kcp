@@ -42,6 +42,6 @@ func Scale[T ctrl.Object](t Test, provider func(g gomega.Gomega) T) func(g gomeg
 	}
 }
 
-func StatusReplicas(scale *autoscalingv1.Scale) int32 {
-	return scale.Status.Replicas
+func StatusReplicas(scale *autoscalingv1.Scale) int {
+	return int(scale.Status.Replicas)
 }
