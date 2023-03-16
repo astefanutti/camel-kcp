@@ -121,7 +121,7 @@ func newTestClient() (Client, error) {
 		return nil, err
 	}
 
-	scaleClient, err := NewForConfig(cfg)
+	scaleClient, err := NewScaleClientForConfig(cfg)
 	if err != nil {
 		return nil, err
 	}

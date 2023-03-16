@@ -38,22 +38,22 @@ type ClusterScaleInterface interface {
 	Cluster(logicalcluster.Path) scale.ScalesGetter
 }
 
-var _ ClusterScaleInterface = (*ClusterClientset)(nil)
+var _ ClusterScaleInterface = (*ClusterScaleClient)(nil)
 
-type ClusterClientset struct {
+type ClusterScaleClient struct {
 	clientCache kcpclient.Cache[scale.ScalesGetter]
 }
 
-func (c ClusterClientset) Cluster(clusterPath logicalcluster.Path) scale.ScalesGetter {
+func (c ClusterScaleClient) Cluster(clusterPath logicalcluster.Path) scale.ScalesGetter {
 	return c.clientCache.ClusterOrDie(clusterPath)
 }
 
-// NewForConfig creates a new ClusterClientset for the given config.
+// NewScaleClientForConfig creates a new ClusterScaleClient for the given config.
 // If config's RateLimiter is not set and QPS and Burst are acceptable,
-// NewForConfig will generate a rate-limiter in configShallowCopy.
-// NewForConfig is equivalent to NewForConfigAndClient(c, httpClient),
+// NewScaleClientForConfig will generate a rate-limiter in configShallowCopy.
+// NewScaleClientForConfig is equivalent to NewScaleClientForConfigAndClient(c, httpClient),
 // where httpClient was generated with rest.HTTPClientFor(c).
-func NewForConfig(c *rest.Config) (*ClusterClientset, error) {
+func NewScaleClientForConfig(c *rest.Config) (*ClusterScaleClient, error) {
 	configShallowCopy := *c
 
 	if configShallowCopy.UserAgent == "" {
@@ -66,14 +66,14 @@ func NewForConfig(c *rest.Config) (*ClusterClientset, error) {
 		return nil, err
 	}
 
-	return NewForConfigAndClient(&configShallowCopy, httpClient)
+	return NewScaleClientForConfigAndClient(&configShallowCopy, httpClient)
 }
 
-// NewForConfigAndClient creates a new ClusterClientset for the given config and http client.
+// NewScaleClientForConfigAndClient creates a new ClusterScaleClient for the given config and http client.
 // Note the http client provided takes precedence over the configured transport values.
 // If config's RateLimiter is not set and QPS and Burst are acceptable,
-// NewForConfigAndClient will generate a rate-limiter in configShallowCopy.
-func NewForConfigAndClient(c *rest.Config, httpClient *http.Client) (*ClusterClientset, error) {
+// NewScaleClientForConfigAndClient will generate a rate-limiter in configShallowCopy.
+func NewScaleClientForConfigAndClient(c *rest.Config, httpClient *http.Client) (*ClusterScaleClient, error) {
 	configShallowCopy := *c
 	if configShallowCopy.RateLimiter == nil && configShallowCopy.QPS > 0 {
 		if configShallowCopy.Burst <= 0 {
@@ -97,5 +97,5 @@ func NewForConfigAndClient(c *rest.Config, httpClient *http.Client) (*ClusterCli
 		},
 	})
 
-	return &ClusterClientset{clientCache: cache}, nil
+	return &ClusterScaleClient{clientCache: cache}, nil
 }
