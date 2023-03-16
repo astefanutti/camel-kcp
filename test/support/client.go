@@ -40,6 +40,7 @@ type Client interface {
 	Core() kubernetes.ClusterInterface
 	Kcp() kcpclientset.ClusterInterface
 	Camel
+	Mapper() ClusterRESTMapper
 	Scale() ClusterScaleInterface
 }
 
@@ -49,11 +50,14 @@ type Camel interface {
 }
 
 type testClient struct {
-	core  kubernetes.ClusterInterface
-	kcp   kcpclientset.ClusterInterface
-	scale ClusterScaleInterface
-	camel camel.Interface
+	core   kubernetes.ClusterInterface
+	kcp    kcpclientset.ClusterInterface
+	camel  camel.Interface
+	mapper ClusterRESTMapper
+	scale  ClusterScaleInterface
 }
+
+var _ Client = (*testClient)(nil)
 
 func (t *testClient) Core() kubernetes.ClusterInterface {
 	return t.core
@@ -63,16 +67,20 @@ func (t *testClient) Kcp() kcpclientset.ClusterInterface {
 	return t.kcp
 }
 
-func (t *testClient) Scale() ClusterScaleInterface {
-	return t.scale
-}
-
 func (t *testClient) CamelV1() camelv1.CamelV1Interface {
 	return t.camel.CamelV1()
 }
 
 func (t *testClient) CamelV1alpha1() camelv1alpha1.CamelV1alpha1Interface {
 	return t.camel.CamelV1alpha1()
+}
+
+func (t *testClient) Mapper() ClusterRESTMapper {
+	return t.mapper
+}
+
+func (t *testClient) Scale() ClusterScaleInterface {
+	return t.scale
 }
 
 func newTestClient() (Client, error) {
@@ -108,15 +116,21 @@ func newTestClient() (Client, error) {
 		return nil, err
 	}
 
+	restMapper, err := NewRESTMapperForConfig(cfg)
+	if err != nil {
+		return nil, err
+	}
+
 	scaleClient, err := NewForConfig(cfg)
 	if err != nil {
 		return nil, err
 	}
 
 	return &testClient{
-		core:  kubeClient,
-		kcp:   kcpClient,
-		scale: scaleClient,
-		camel: camelClient,
+		core:   kubeClient,
+		kcp:    kcpClient,
+		camel:  camelClient,
+		mapper: restMapper,
+		scale:  scaleClient,
 	}, nil
 }
