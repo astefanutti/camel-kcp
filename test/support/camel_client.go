@@ -21,14 +21,18 @@ import (
 	"fmt"
 	"net/http"
 
+	"k8s.io/apimachinery/pkg/runtime/schema"
+	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/util/flowcontrol"
 
-	camelv1 "github.com/apache/camel-k/pkg/client/camel/clientset/versioned/typed/camel/v1"
-	camelv1alpha1 "github.com/apache/camel-k/pkg/client/camel/clientset/versioned/typed/camel/v1alpha1"
+	camelv1 "github.com/apache/camel-k/pkg/apis/camel/v1"
+	camelv1alpha1 "github.com/apache/camel-k/pkg/apis/camel/v1alpha1"
+	camelv1client "github.com/apache/camel-k/pkg/client/camel/clientset/versioned/typed/camel/v1"
+	camelv1alpha1client "github.com/apache/camel-k/pkg/client/camel/clientset/versioned/typed/camel/v1alpha1"
 )
 
-func NewCamelClientsForConfigAndClient(c *rest.Config, httpClient *http.Client) (*camelv1.CamelV1Client, *camelv1alpha1.CamelV1alpha1Client, error) {
+func NewCamelClientsForConfigAndClient(c *rest.Config, httpClient *http.Client) (*camelv1client.CamelV1Client, *camelv1alpha1client.CamelV1alpha1Client, error) {
 	configShallowCopy := *c
 	if configShallowCopy.RateLimiter == nil && configShallowCopy.QPS > 0 {
 		if configShallowCopy.Burst <= 0 {
@@ -37,14 +41,50 @@ func NewCamelClientsForConfigAndClient(c *rest.Config, httpClient *http.Client) 
 		configShallowCopy.RateLimiter = flowcontrol.NewTokenBucketRateLimiter(configShallowCopy.QPS, configShallowCopy.Burst)
 	}
 
-	camelV1, err := camelv1.NewForConfigAndClient(&configShallowCopy, httpClient)
+	camelV1, err := newCamelV1ClientForConfigAndClient(&configShallowCopy, httpClient)
 	if err != nil {
 		return nil, nil, err
 	}
-	camelV1alpha1, err := camelv1alpha1.NewForConfigAndClient(&configShallowCopy, httpClient)
+	camelV1alpha1, err := newCamelV1alpha1ClientForConfigAndClient(&configShallowCopy, httpClient)
 	if err != nil {
 		return nil, nil, err
 	}
 
 	return camelV1, camelV1alpha1, nil
+}
+
+func newCamelV1alpha1ClientForConfigAndClient(c *rest.Config, h *http.Client) (*camelv1alpha1client.CamelV1alpha1Client, error) {
+	config := *c
+	if err := setConfigDefaults(camelv1alpha1.SchemeGroupVersion, &config); err != nil {
+		return nil, err
+	}
+	client, err := rest.RESTClientForConfigAndClient(&config, h)
+	if err != nil {
+		return nil, err
+	}
+	return camelv1alpha1client.New(client), nil
+}
+
+func newCamelV1ClientForConfigAndClient(c *rest.Config, h *http.Client) (*camelv1client.CamelV1Client, error) {
+	config := *c
+	if err := setConfigDefaults(camelv1.SchemeGroupVersion, &config); err != nil {
+		return nil, err
+	}
+	client, err := rest.RESTClientForConfigAndClient(&config, h)
+	if err != nil {
+		return nil, err
+	}
+	return camelv1client.New(client), nil
+}
+
+func setConfigDefaults(gv schema.GroupVersion, config *rest.Config) error {
+	config.GroupVersion = &gv
+	config.APIPath = "/apis"
+	config.NegotiatedSerializer = scheme.Codecs
+
+	if config.UserAgent == "" {
+		config.UserAgent = rest.DefaultKubernetesUserAgent()
+	}
+
+	return nil
 }
