@@ -26,11 +26,19 @@ import (
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/util/flowcontrol"
 
+	"github.com/apache/camel-k/pkg/apis"
 	camelv1 "github.com/apache/camel-k/pkg/apis/camel/v1"
 	camelv1alpha1 "github.com/apache/camel-k/pkg/apis/camel/v1alpha1"
 	camelv1client "github.com/apache/camel-k/pkg/client/camel/clientset/versioned/typed/camel/v1"
 	camelv1alpha1client "github.com/apache/camel-k/pkg/client/camel/clientset/versioned/typed/camel/v1alpha1"
 )
+
+func init() {
+	err := apis.AddToScheme(scheme.Scheme)
+	if err != nil {
+		panic(err)
+	}
+}
 
 func NewCamelClientsForConfigAndClient(c *rest.Config, httpClient *http.Client) (*camelv1client.CamelV1Client, *camelv1alpha1client.CamelV1alpha1Client, error) {
 	configShallowCopy := *c
