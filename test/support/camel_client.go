@@ -63,9 +63,7 @@ func NewCamelClientsForConfigAndClient(c *rest.Config, httpClient *http.Client) 
 
 func newCamelV1alpha1ClientForConfigAndClient(c *rest.Config, h *http.Client) (*camelv1alpha1client.CamelV1alpha1Client, error) {
 	config := *c
-	if err := setConfigDefaults(camelv1alpha1.SchemeGroupVersion, &config); err != nil {
-		return nil, err
-	}
+	setConfigDefaults(camelv1alpha1.SchemeGroupVersion, &config)
 	client, err := rest.RESTClientForConfigAndClient(&config, h)
 	if err != nil {
 		return nil, err
@@ -75,9 +73,7 @@ func newCamelV1alpha1ClientForConfigAndClient(c *rest.Config, h *http.Client) (*
 
 func newCamelV1ClientForConfigAndClient(c *rest.Config, h *http.Client) (*camelv1client.CamelV1Client, error) {
 	config := *c
-	if err := setConfigDefaults(camelv1.SchemeGroupVersion, &config); err != nil {
-		return nil, err
-	}
+	setConfigDefaults(camelv1.SchemeGroupVersion, &config)
 	client, err := rest.RESTClientForConfigAndClient(&config, h)
 	if err != nil {
 		return nil, err
@@ -85,7 +81,7 @@ func newCamelV1ClientForConfigAndClient(c *rest.Config, h *http.Client) (*camelv
 	return camelv1client.New(client), nil
 }
 
-func setConfigDefaults(gv schema.GroupVersion, config *rest.Config) error {
+func setConfigDefaults(gv schema.GroupVersion, config *rest.Config) {
 	config.GroupVersion = &gv
 	config.APIPath = "/apis"
 	config.NegotiatedSerializer = scheme.Codecs
@@ -93,6 +89,4 @@ func setConfigDefaults(gv schema.GroupVersion, config *rest.Config) error {
 	if config.UserAgent == "" {
 		config.UserAgent = rest.DefaultKubernetesUserAgent()
 	}
-
-	return nil
 }
