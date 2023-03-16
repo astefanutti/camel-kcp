@@ -31,7 +31,6 @@ import (
 	"github.com/kcp-dev/client-go/kubernetes"
 	kcpclientset "github.com/kcp-dev/kcp/pkg/client/clientset/versioned/cluster"
 
-	camel "github.com/apache/camel-k/pkg/client/camel/clientset/versioned"
 	camelv1 "github.com/apache/camel-k/pkg/client/camel/clientset/versioned/typed/camel/v1"
 	camelv1alpha1 "github.com/apache/camel-k/pkg/client/camel/clientset/versioned/typed/camel/v1alpha1"
 )
@@ -39,22 +38,23 @@ import (
 type Client interface {
 	Core() kubernetes.ClusterInterface
 	Kcp() kcpclientset.ClusterInterface
-	Camel
+	CamelInterface
 	Mapper() ClusterRESTMapper
 	Scale() ClusterScaleInterface
 }
 
-type Camel interface {
+type CamelInterface interface {
 	CamelV1() camelv1.CamelV1Interface
 	CamelV1alpha1() camelv1alpha1.CamelV1alpha1Interface
 }
 
 type testClient struct {
-	core   kubernetes.ClusterInterface
-	kcp    kcpclientset.ClusterInterface
-	camel  camel.Interface
-	mapper ClusterRESTMapper
-	scale  ClusterScaleInterface
+	core          kubernetes.ClusterInterface
+	kcp           kcpclientset.ClusterInterface
+	camelV1       camelv1.CamelV1Interface
+	camelV1alpha1 camelv1alpha1.CamelV1alpha1Interface
+	mapper        ClusterRESTMapper
+	scale         ClusterScaleInterface
 }
 
 var _ Client = (*testClient)(nil)
@@ -68,11 +68,11 @@ func (t *testClient) Kcp() kcpclientset.ClusterInterface {
 }
 
 func (t *testClient) CamelV1() camelv1.CamelV1Interface {
-	return t.camel.CamelV1()
+	return t.camelV1
 }
 
 func (t *testClient) CamelV1alpha1() camelv1alpha1.CamelV1alpha1Interface {
-	return t.camel.CamelV1alpha1()
+	return t.camelV1alpha1
 }
 
 func (t *testClient) Mapper() ClusterRESTMapper {
@@ -111,7 +111,7 @@ func newTestClient() (Client, error) {
 		return nil, err
 	}
 
-	camelClient, err := camel.NewForConfigAndClient(cfg, httpClient)
+	camelV1Client, camelV1alpha1Client, err := NewCamelClientsForConfigAndClient(cfg, httpClient)
 	if err != nil {
 		return nil, err
 	}
@@ -127,10 +127,11 @@ func newTestClient() (Client, error) {
 	}
 
 	return &testClient{
-		core:   kubeClient,
-		kcp:    kcpClient,
-		camel:  camelClient,
-		mapper: restMapper,
-		scale:  scaleClient,
+		core:          kubeClient,
+		kcp:           kcpClient,
+		camelV1:       camelV1Client,
+		camelV1alpha1: camelV1alpha1Client,
+		mapper:        restMapper,
+		scale:         scaleClient,
 	}, nil
 }
