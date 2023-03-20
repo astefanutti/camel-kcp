@@ -19,6 +19,7 @@ package support
 
 import (
 	corev1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	conditionsapi "github.com/kcp-dev/kcp/pkg/apis/third_party/conditions/apis/conditions/v1alpha1"
 	conditionsutil "github.com/kcp-dev/kcp/pkg/apis/third_party/conditions/util/conditions"
@@ -26,6 +27,21 @@ import (
 	camelv1 "github.com/apache/camel-k/pkg/apis/camel/v1"
 	camelv1alpha1 "github.com/apache/camel-k/pkg/apis/camel/v1alpha1"
 )
+
+func WithName[T metav1.Object](name string) Option[T] {
+	return &withName[T]{name: name}
+}
+
+type withName[T metav1.Object] struct {
+	name string
+}
+
+var _ Option[metav1.Object] = (*withName[metav1.Object])(nil)
+
+func (o *withName[T]) applyTo(to T) error {
+	to.SetName(o.name)
+	return nil
+}
 
 type conditionType interface {
 	~string
