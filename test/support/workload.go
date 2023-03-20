@@ -24,6 +24,7 @@ import (
 	"io"
 	"os"
 	"path"
+	"sort"
 
 	"github.com/onsi/gomega"
 
@@ -48,9 +49,24 @@ import (
 
 type SyncTargetConfig struct {
 	name           string
+	labels         map[string]string
 	kubeConfigPath string
 	workspace      syncTargetWorkspace
 	syncer         syncer
+}
+
+var _ Option[*SyncTargetConfig] = (*withLabel[*SyncTargetConfig])(nil)
+
+func (s *SyncTargetConfig) SetName(name string) {
+	s.name = name
+}
+
+func (s *SyncTargetConfig) GetLabels() map[string]string {
+	return s.labels
+}
+
+func (s *SyncTargetConfig) SetLabels(labels map[string]string) {
+	s.labels = labels
 }
 
 type syncTargetWorkspace struct {
@@ -130,6 +146,7 @@ func applyKcpWorkloadSync(t Test, config *SyncTargetConfig) (func() error, error
 	// syncOptions.ResourcesToSync = []string{"ingresses.networking.k8s.io", "services"}
 	// syncOptions.SyncTargetName = config.name
 	syncOptions.OutputFile = "-"
+	syncOptions.SyncTargetLabels = labelsAsKeyValuePairs(config.labels)
 	syncOptions.KCPNamespace = config.syncer.namespace
 	syncOptions.SyncerImage = config.syncer.image
 	syncOptions.Replicas = config.syncer.replicas
@@ -211,4 +228,14 @@ func applyKcpWorkloadSync(t Test, config *SyncTargetConfig) (func() error, error
 	}
 
 	return cleanup, nil
+}
+
+func labelsAsKeyValuePairs(labels map[string]string) []string {
+	pairs := make([]string, 0, len(labels))
+	for key, value := range labels {
+		pairs = append(pairs, key+"="+value)
+	}
+	// Sort for determinism
+	sort.StringSlice(pairs).Sort()
+	return pairs
 }
