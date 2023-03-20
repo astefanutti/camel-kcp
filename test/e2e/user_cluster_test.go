@@ -55,6 +55,9 @@ func TestUserCluster(t *testing.T) {
 		},
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "user",
+			Labels: map[string]string{
+				"org.apache.camel/user-plane": "",
+			},
 		},
 		Spec: schedulingv1alpha1.LocationSpec{
 			Resource: schedulingv1alpha1.GroupVersionResource{
