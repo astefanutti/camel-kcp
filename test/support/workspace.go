@@ -22,6 +22,7 @@ import (
 
 	"github.com/onsi/gomega"
 
+	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime/schema"
@@ -36,31 +37,46 @@ type WorkspaceRef interface {
 	*tenancyv1alpha1.Workspace | logicalcluster.Name
 }
 
-func InWorkspace[T metav1.Object, W WorkspaceRef](workspace W) Option[T] {
-	switch w := any(workspace).(type) {
+type workspaceable interface {
+	*corev1.Namespace | *SyncTargetConfig
+}
+
+func InWorkspace[T workspaceable, W WorkspaceRef](workspaceReference W) Option[T] {
+	switch workspace := any(workspaceReference).(type) {
 	case *tenancyv1alpha1.Workspace:
-		return &inWorkspace[T]{logicalcluster.Name(w.Spec.Cluster)}
+		return &inWorkspace[T]{workspace: workspace, name: logicalcluster.Name(workspace.Spec.Cluster)}
 	case logicalcluster.Name:
-		return &inWorkspace[T]{w}
+		return &inWorkspace[T]{name: workspace}
 	default:
 		return errorOption[T](func(to T) error {
-			return fmt.Errorf("unsupported type passed to InWorkspace option: %s", w)
+			return fmt.Errorf("unsupported type passed to InWorkspace option: %s", workspace)
 		})
 	}
 }
 
-type inWorkspace[T metav1.Object] struct {
-	workspace logicalcluster.Name
+type inWorkspace[T workspaceable] struct {
+	name      logicalcluster.Name
+	workspace *tenancyv1alpha1.Workspace
 }
 
-var _ Option[metav1.Object] = &inWorkspace[metav1.Object]{}
+var _ Option[*corev1.Namespace] = (*inWorkspace[*corev1.Namespace])(nil)
+var _ Option[*SyncTargetConfig] = (*inWorkspace[*SyncTargetConfig])(nil)
 
 // nolint: unused
 // To be removed when the false-positivity is fixed.
 func (o *inWorkspace[T]) applyTo(to T) error {
-	to.SetAnnotations(map[string]string{
-		logicalcluster.AnnotationKey: o.workspace.String(),
-	})
+	switch target := any(to).(type) {
+	case *corev1.Namespace:
+		target.SetAnnotations(map[string]string{
+			logicalcluster.AnnotationKey: o.name.String(),
+		})
+	case *SyncTargetConfig:
+		if o.workspace == nil {
+			return fmt.Errorf("InWorkspace option cannot be apply to SyncTargetConfig without Workspace object")
+		}
+		target.workspace.path = logicalcluster.NewPath(o.workspace.Spec.Cluster)
+		target.workspace.url = o.workspace.Spec.URL
+	}
 
 	return nil
 }
