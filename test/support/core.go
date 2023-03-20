@@ -17,21 +17,56 @@ limitations under the License.
 
 package support
 
-import (
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-)
+type PartialMetadata interface {
+	SetName(name string)
+	GetLabels() map[string]string
+	SetLabels(labels map[string]string)
+}
 
-func WithName[T metav1.Object](name string) Option[T] {
+func WithName[T PartialMetadata](name string) Option[T] {
 	return &withName[T]{name: name}
 }
 
-type withName[T metav1.Object] struct {
+type withName[T PartialMetadata] struct {
 	name string
 }
 
-var _ Option[metav1.Object] = (*withName[metav1.Object])(nil)
+var _ Option[PartialMetadata] = (*withName[PartialMetadata])(nil)
 
 func (o *withName[T]) applyTo(to T) error {
 	to.SetName(o.name)
+	return nil
+}
+
+func WithLabel[T PartialMetadata](key, value string) Option[T] {
+	return &withLabel[T]{key, value}
+}
+
+type withLabel[T PartialMetadata] struct {
+	key, value string
+}
+
+var _ Option[PartialMetadata] = (*withLabel[PartialMetadata])(nil)
+
+func (o *withLabel[T]) applyTo(object T) error {
+	if object.GetLabels() == nil {
+		object.SetLabels(map[string]string{})
+	}
+	object.GetLabels()[o.key] = o.value
+	return nil
+}
+
+func WithLabels[T PartialMetadata](labels map[string]string) Option[T] {
+	return &withLabels[T]{labels}
+}
+
+type withLabels[T PartialMetadata] struct {
+	labels map[string]string
+}
+
+var _ Option[PartialMetadata] = (*withLabels[PartialMetadata])(nil)
+
+func (o *withLabels[T]) applyTo(object T) error {
+	object.SetLabels(o.labels)
 	return nil
 }
