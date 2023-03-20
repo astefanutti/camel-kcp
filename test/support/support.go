@@ -23,6 +23,7 @@ import (
 	"time"
 
 	corev1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	"sigs.k8s.io/controller-runtime/pkg/kontext"
 
@@ -34,6 +35,8 @@ import (
 const (
 	testWorkspaceName = "TEST_WORKSPACE"
 
+	clustersKubeConfigDir = "CLUSTERS_KUBECONFIG_DIR"
+
 	TestTimeoutShort  = 1 * time.Minute
 	TestTimeoutMedium = 2 * time.Minute
 	TestTimeoutLong   = 5 * time.Minute
@@ -43,6 +46,8 @@ var (
 	TestWorkspace = getEnvLogicalClusterName(testWorkspaceName, logicalcluster.NewPath("root:camel-k"))
 
 	CamelWorkspaceType = tenancyv1alpha1.WorkspaceTypeReference{Name: "camel-k"}
+
+	ApplyOptions = metav1.ApplyOptions{FieldManager: "camel-kcp-test", Force: true}
 )
 
 func getEnvLogicalClusterName(key string, fallback logicalcluster.Path) logicalcluster.Path {
