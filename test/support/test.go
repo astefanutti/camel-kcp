@@ -28,6 +28,7 @@ import (
 
 	corev1alpha1 "github.com/kcp-dev/kcp/pkg/apis/core/v1alpha1"
 	tenancyv1alpha1 "github.com/kcp-dev/kcp/pkg/apis/tenancy/v1alpha1"
+	workloadv1alpha1 "github.com/kcp-dev/kcp/pkg/apis/workload/v1alpha1"
 )
 
 type Test interface {
@@ -39,6 +40,7 @@ type Test interface {
 
 	NewTestNamespace(...Option[*corev1.Namespace]) *corev1.Namespace
 	NewTestWorkspace(...Option[*tenancyv1alpha1.Workspace]) *tenancyv1alpha1.Workspace
+	NewSyncTarget(name string, options ...Option[*SyncTargetConfig]) *workloadv1alpha1.SyncTarget
 }
 
 type Option[T any] interface {
@@ -124,4 +126,15 @@ func (t *T) NewTestNamespace(options ...Option[*corev1.Namespace]) *corev1.Names
 		deleteTestNamespace(t, namespace)
 	})
 	return namespace
+}
+
+func (t *T) NewSyncTarget(name string, options ...Option[*SyncTargetConfig]) *workloadv1alpha1.SyncTarget {
+	workloadCluster, cleanup := createSyncTarget(t, name, options...)
+	t.T().Cleanup(func() {
+		deleteSyncTarget(t, workloadCluster)
+	})
+	t.T().Cleanup(func() {
+		t.Expect(cleanup()).To(gomega.Succeed())
+	})
+	return workloadCluster
 }
