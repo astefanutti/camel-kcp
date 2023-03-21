@@ -127,6 +127,13 @@ jobs:
           version: ${{ env.KIND_VERSION }}
           config: ${{ env.KIND_CONFIG_FILE }}
 
+      - name: Kubernetes KinD compute cluster
+        uses: helm/kind-action@v1.5.0
+        with:
+          cluster_name: kcp-user-cluster
+          version: ${{ env.KIND_VERSION }}
+          config: ${{ env.KIND_CONFIG_FILE }}
+
       - name: Info
         run: |
           echo "Control plane cluster:"
@@ -138,6 +145,11 @@ jobs:
           kubectl --context kind-kcp-data-cluster cluster-info
           kubectl --context kind-kcp-data-cluster describe nodes
           kind get kubeconfig --name kcp-data-cluster > ${TEMP_DIR}/data.kubeconfig
+
+          echo "User plane cluster:"
+          kubectl --context kind-kcp-user-cluster cluster-info
+          kubectl --context kind-kcp-user-cluster describe nodes
+          kind get kubeconfig --name kcp-user-cluster > ${TEMP_DIR}/user.kubeconfig
 
       - name: Install Ingress controller
         run: |
