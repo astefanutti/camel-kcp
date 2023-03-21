@@ -19,6 +19,7 @@ package e2e
 
 import (
 	"testing"
+	"time"
 
 	. "github.com/onsi/gomega"
 
@@ -159,4 +160,10 @@ from:
 
 	test.Eventually(Integration(test, namespace, name), TestTimeoutLong).
 		Should(WithTransform(ConditionStatus(camelv1.IntegrationConditionReady), Equal(corev1.ConditionTrue)))
+
+	test.Consistently(Integration(test, namespace, name), 15*time.Second).
+		Should(And(
+			WithTransform(ConditionStatus(camelv1.IntegrationConditionReady), Equal(corev1.ConditionTrue)),
+			WithTransform(IntegrationReplicas, Equal(1)),
+		))
 }
