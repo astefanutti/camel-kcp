@@ -45,7 +45,7 @@ func TestUserCluster(t *testing.T) {
 	test.NewTestNamespace(InWorkspace[*corev1.Namespace](workspace), WithName[*corev1.Namespace]("kcp-syncer"))
 
 	// Create the syncer
-	test.NewSyncTarget("kcp-cluster-user", InWorkspace[*SyncTargetConfig](workspace), WithLabel[*SyncTargetConfig]("org.apache.camel/user-plane", ""), WithKubeConfigByName, Syncer().Namespace("kcp-syncer"))
+	test.NewSyncTarget("user", InWorkspace[*SyncTargetConfig](workspace), WithLabel[*SyncTargetConfig]("org.apache.camel/user-plane", ""), WithKubeConfigByName, Syncer().Namespace("kcp-syncer"))
 
 	// Create location
 	location := &schedulingv1alpha1.Location{
