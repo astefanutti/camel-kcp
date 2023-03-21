@@ -39,8 +39,11 @@ func Integration(t Test, namespace *corev1.Namespace, name string) func(g gomega
 	}
 }
 
-func IntegrationReplicas(integration *camelv1.Integration) *int32 {
-	return integration.Status.Replicas
+func IntegrationReplicas(integration *camelv1.Integration) int {
+	if replicas := integration.Status.Replicas; replicas != nil {
+		return int(*replicas)
+	}
+	return -1
 }
 
 func KameletBinding(t Test, namespace *corev1.Namespace, name string) func(g gomega.Gomega) *camelv1alpha1.KameletBinding {
