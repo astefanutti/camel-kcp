@@ -23,6 +23,7 @@ import (
 	. "github.com/onsi/gomega"
 
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	"github.com/kcp-dev/logicalcluster/v3"
@@ -41,13 +42,31 @@ func TestUserCluster(t *testing.T) {
 	// Create the test workspace
 	workspace := test.NewTestWorkspace(OfType(CamelWorkspaceType))
 
+	cluster := logicalcluster.NewPath(workspace.Spec.Cluster)
+
 	// Create the syncer namespace
 	test.NewTestNamespace(InWorkspace[*corev1.Namespace](workspace), WithName[*corev1.Namespace]("kcp-syncer"))
 
 	// Create the syncer
-	test.NewSyncTarget("user", InWorkspace[*SyncTargetConfig](workspace), WithLabel[*SyncTargetConfig]("org.apache.camel/user-plane", ""), WithKubeConfigByName, Syncer().Namespace("kcp-syncer"))
+	test.NewSyncTarget("user",
+		InWorkspace[*SyncTargetConfig](workspace),
+		WithLabel[*SyncTargetConfig]("org.apache.camel/user-plane", ""),
+		WithKubeConfigByName,
+		Syncer().Namespace("kcp-syncer"),
+	)
 
-	// Create location
+	// Update the default placement if it exists
+	placement, err := test.Client().Kcp().Cluster(cluster).SchedulingV1alpha1().Placements().Get(test.Ctx(), "default", metav1.GetOptions{})
+	test.Expect(err).To(Or(Not(HaveOccurred()), WithTransform(errors.IsNotFound, BeTrue())))
+	if placement != nil {
+		selector, err := metav1.ParseToLabelSelector("camel.apache.org/data-plane")
+		test.Expect(err).NotTo(HaveOccurred())
+		placement.Spec.NamespaceSelector = selector
+		placement, err = test.Client().Kcp().Cluster(cluster).SchedulingV1alpha1().Placements().Update(test.Ctx(), placement, metav1.UpdateOptions{})
+		test.Expect(err).NotTo(HaveOccurred())
+	}
+
+	// Create the user location
 	location := &schedulingv1alpha1.Location{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: schedulingv1alpha1.SchemeGroupVersion.String(),
@@ -75,12 +94,12 @@ func TestUserCluster(t *testing.T) {
 			},
 		},
 	}
-	location, err := test.Client().Kcp().SchedulingV1alpha1().Cluster(logicalcluster.NewPath(workspace.Spec.Cluster)).Locations().
+	location, err = test.Client().Kcp().SchedulingV1alpha1().Cluster(cluster).Locations().
 		Create(test.Ctx(), location, metav1.CreateOptions{})
 	test.Expect(err).NotTo(HaveOccurred())
 
-	// Create placement
-	placement := &schedulingv1alpha1.Placement{
+	// Create the user placement
+	placement = &schedulingv1alpha1.Placement{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: schedulingv1alpha1.SchemeGroupVersion.String(),
 			Kind:       "Placement",
@@ -104,19 +123,15 @@ func TestUserCluster(t *testing.T) {
 					},
 				},
 			},
-			NamespaceSelector: &metav1.LabelSelector{
-				MatchLabels: map[string]string{
-					"kubernetes.io/metadata.name": "user",
-				},
-			},
+			NamespaceSelector: &metav1.LabelSelector{},
 		},
 	}
-	placement, err = test.Client().Kcp().SchedulingV1alpha1().Cluster(logicalcluster.NewPath(workspace.Spec.Cluster)).Placements().
+	placement, err = test.Client().Kcp().SchedulingV1alpha1().Cluster(cluster).Placements().
 		Create(test.Ctx(), placement, metav1.CreateOptions{})
 	test.Expect(err).NotTo(HaveOccurred())
 
 	// Create the integration namespace
-	namespace := test.NewTestNamespace(InWorkspace[*corev1.Namespace](workspace), WithName[*corev1.Namespace]("user"))
+	namespace := test.NewTestNamespace(InWorkspace[*corev1.Namespace](workspace))
 
 	// Create the Integration
 	name := "hello"
