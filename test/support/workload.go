@@ -138,13 +138,9 @@ func deleteSyncTarget(t Test, syncTarget *workloadv1alpha1.SyncTarget) {
 func applyKcpWorkloadSync(t Test, config *SyncTargetConfig) (func() error, error) {
 	cleanup := func() error { return nil }
 
-	// Configure workload plugin kubeconfig for test workspace
-	// clusterServer := t.Client().GetConfig().Host + config.workspace.Path()
 	syncCommandOutput := new(bytes.Buffer)
 	syncOptions := workloadplugin.NewSyncOptions(genericclioptions.IOStreams{In: os.Stdin, Out: syncCommandOutput, ErrOut: os.Stderr})
 	syncOptions.KubectlOverrides.ClusterInfo.Server = config.workspace.url
-	// syncOptions.ResourcesToSync = []string{"ingresses.networking.k8s.io", "services"}
-	// syncOptions.SyncTargetName = config.name
 	syncOptions.OutputFile = "-"
 	syncOptions.SyncTargetLabels = labelsAsKeyValuePairs(config.labels)
 	syncOptions.KCPNamespace = config.syncer.namespace
