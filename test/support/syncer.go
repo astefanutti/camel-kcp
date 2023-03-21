@@ -17,8 +17,8 @@ limitations under the License.
 
 package support
 
-func Syncer() *syncer {
-	return &syncer{
+func WithSyncer() *Syncer {
+	return &Syncer{
 		// TODO: allow this to be set based on the KCP version exported by default
 		image:     "ghcr.io/kcp-dev/kcp/syncer:main",
 		namespace: "default",
@@ -26,36 +26,38 @@ func Syncer() *syncer {
 	}
 }
 
-type syncer struct {
+type Syncer struct {
 	image           string
 	namespace       string
 	replicas        int
 	resourcesToSync []string
 }
 
-var _ Option[*SyncTargetConfig] = (*syncer)(nil)
+var _ Option[*SyncTargetConfig] = (*Syncer)(nil)
 
-func (s *syncer) Image(image string) *syncer {
+func (s *Syncer) Image(image string) *Syncer {
 	s.image = image
 	return s
 }
 
-func (s *syncer) Namespace(namespace string) *syncer {
+func (s *Syncer) Namespace(namespace string) *Syncer {
 	s.namespace = namespace
 	return s
 }
 
-func (s *syncer) Replicas(replicas int) *syncer {
+func (s *Syncer) Replicas(replicas int) *Syncer {
 	s.replicas = replicas
 	return s
 }
 
-func (s *syncer) ResourcesToSync(resourcesToSync ...string) *syncer {
+func (s *Syncer) ResourcesToSync(resourcesToSync ...string) *Syncer {
 	s.resourcesToSync = resourcesToSync
 	return s
 }
 
-func (s *syncer) applyTo(config *SyncTargetConfig) error {
+// nolint: unused
+// To be removed when the false-positivity is fixed.
+func (s *Syncer) applyTo(config *SyncTargetConfig) error {
 	config.syncer = *s
 	return nil
 }
