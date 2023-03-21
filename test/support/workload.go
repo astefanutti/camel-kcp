@@ -20,6 +20,7 @@ package support
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"os"
@@ -32,7 +33,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/types"
-	"k8s.io/apimachinery/pkg/util/errors"
+	utilerrors "k8s.io/apimachinery/pkg/util/errors"
 	"k8s.io/apimachinery/pkg/util/yaml"
 	"k8s.io/cli-runtime/pkg/genericclioptions"
 	"k8s.io/client-go/discovery"
@@ -52,7 +53,7 @@ type SyncTargetConfig struct {
 	labels         map[string]string
 	kubeConfigPath string
 	workspace      syncTargetWorkspace
-	syncer         syncer
+	syncer         Syncer
 }
 
 var _ Option[*SyncTargetConfig] = (*withLabel[*SyncTargetConfig])(nil)
@@ -90,10 +91,14 @@ type withKubeConfigByID struct {
 
 var _ Option[*SyncTargetConfig] = (*withKubeConfigByName)(nil)
 
+// nolint: unused
+// To be removed when the false-positivity is fixed.
 func (o *withKubeConfigByName) applyTo(config *SyncTargetConfig) error {
 	return WithKubeConfigByID(config.name).applyTo(config)
 }
 
+// nolint: unused
+// To be removed when the false-positivity is fixed.
 func (o *withKubeConfigByID) applyTo(config *SyncTargetConfig) error {
 	dir := os.Getenv(clustersKubeConfigDir)
 	if dir == "" {
@@ -196,13 +201,13 @@ func applyKcpWorkloadSync(t Test, config *SyncTargetConfig) (func() error, error
 				errs = append(errs, err)
 			}
 		}
-		return errors.NewAggregate(errs)
+		return utilerrors.NewAggregate(errs)
 	}
 
 	for {
 		resource := &unstructured.Unstructured{}
 		err := decoder.Decode(resource)
-		if err == io.EOF {
+		if errors.Is(err, io.EOF) {
 			break
 		}
 		if err != nil {

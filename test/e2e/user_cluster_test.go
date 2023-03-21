@@ -52,7 +52,7 @@ func TestUserCluster(t *testing.T) {
 		InWorkspace[*SyncTargetConfig](workspace),
 		WithLabel[*SyncTargetConfig]("org.apache.camel/user-plane", ""),
 		WithKubeConfigByName,
-		Syncer().Namespace("kcp-syncer"),
+		WithSyncer().Namespace("kcp-syncer"),
 	)
 
 	// Update the default placement if it exists
@@ -62,7 +62,7 @@ func TestUserCluster(t *testing.T) {
 		selector, err := metav1.ParseToLabelSelector("camel.apache.org/data-plane")
 		test.Expect(err).NotTo(HaveOccurred())
 		placement.Spec.NamespaceSelector = selector
-		placement, err = test.Client().Kcp().Cluster(cluster).SchedulingV1alpha1().Placements().Update(test.Ctx(), placement, metav1.UpdateOptions{})
+		_, err = test.Client().Kcp().Cluster(cluster).SchedulingV1alpha1().Placements().Update(test.Ctx(), placement, metav1.UpdateOptions{})
 		test.Expect(err).NotTo(HaveOccurred())
 	}
 
@@ -94,7 +94,7 @@ func TestUserCluster(t *testing.T) {
 			},
 		},
 	}
-	location, err = test.Client().Kcp().SchedulingV1alpha1().Cluster(cluster).Locations().
+	_, err = test.Client().Kcp().SchedulingV1alpha1().Cluster(cluster).Locations().
 		Create(test.Ctx(), location, metav1.CreateOptions{})
 	test.Expect(err).NotTo(HaveOccurred())
 
@@ -126,7 +126,7 @@ func TestUserCluster(t *testing.T) {
 			NamespaceSelector: &metav1.LabelSelector{},
 		},
 	}
-	placement, err = test.Client().Kcp().SchedulingV1alpha1().Cluster(cluster).Placements().
+	_, err = test.Client().Kcp().SchedulingV1alpha1().Cluster(cluster).Placements().
 		Create(test.Ctx(), placement, metav1.CreateOptions{})
 	test.Expect(err).NotTo(HaveOccurred())
 

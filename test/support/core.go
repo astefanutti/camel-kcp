@@ -33,6 +33,8 @@ type withName[T PartialMetadata] struct {
 
 var _ Option[PartialMetadata] = (*withName[PartialMetadata])(nil)
 
+// nolint: unused
+// To be removed when the false-positivity is fixed.
 func (o *withName[T]) applyTo(to T) error {
 	to.SetName(o.name)
 	return nil
@@ -48,6 +50,8 @@ type withLabel[T PartialMetadata] struct {
 
 var _ Option[PartialMetadata] = (*withLabel[PartialMetadata])(nil)
 
+// nolint: unused
+// To be removed when the false-positivity is fixed.
 func (o *withLabel[T]) applyTo(object T) error {
 	if object.GetLabels() == nil {
 		object.SetLabels(map[string]string{})
@@ -66,6 +70,8 @@ type withLabels[T PartialMetadata] struct {
 
 var _ Option[PartialMetadata] = (*withLabels[PartialMetadata])(nil)
 
+// nolint: unused
+// To be removed when the false-positivity is fixed.
 func (o *withLabels[T]) applyTo(object T) error {
 	object.SetLabels(o.labels)
 	return nil
