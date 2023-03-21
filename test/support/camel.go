@@ -39,6 +39,10 @@ func Integration(t Test, namespace *corev1.Namespace, name string) func(g gomega
 	}
 }
 
+func IntegrationReplicas(integration *camelv1.Integration) *int32 {
+	return integration.Status.Replicas
+}
+
 func KameletBinding(t Test, namespace *corev1.Namespace, name string) func(g gomega.Gomega) *camelv1alpha1.KameletBinding {
 	return func(g gomega.Gomega) *camelv1alpha1.KameletBinding {
 		binding, err := t.Client().CamelV1alpha1().KameletBindings(namespace.Name).Get(Inside(t.Ctx(), namespace), name, metav1.GetOptions{})
