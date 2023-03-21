@@ -56,17 +56,6 @@ func TestUserCluster(t *testing.T) {
 		WithSyncer().Namespace("kcp-syncer"),
 	)
 
-	// Update the default placement if it exists
-	placement, err := test.Client().Kcp().Cluster(cluster).SchedulingV1alpha1().Placements().Get(test.Ctx(), "default", metav1.GetOptions{})
-	test.Expect(err).To(Or(Not(HaveOccurred()), WithTransform(errors.IsNotFound, BeTrue())))
-	if placement != nil {
-		selector, err := metav1.ParseToLabelSelector("camel.apache.org/data-plane")
-		test.Expect(err).NotTo(HaveOccurred())
-		placement.Spec.NamespaceSelector = selector
-		_, err = test.Client().Kcp().Cluster(cluster).SchedulingV1alpha1().Placements().Update(test.Ctx(), placement, metav1.UpdateOptions{})
-		test.Expect(err).NotTo(HaveOccurred())
-	}
-
 	// Create the user location
 	location := &schedulingv1alpha1.Location{
 		TypeMeta: metav1.TypeMeta{
@@ -95,18 +84,18 @@ func TestUserCluster(t *testing.T) {
 			},
 		},
 	}
-	_, err = test.Client().Kcp().SchedulingV1alpha1().Cluster(cluster).Locations().
+	_, err := test.Client().Kcp().SchedulingV1alpha1().Cluster(cluster).Locations().
 		Create(test.Ctx(), location, metav1.CreateOptions{})
 	test.Expect(err).NotTo(HaveOccurred())
 
-	// Create the user placement
-	placement = &schedulingv1alpha1.Placement{
+	// Create or update the default placement
+	placement := &schedulingv1alpha1.Placement{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: schedulingv1alpha1.SchemeGroupVersion.String(),
 			Kind:       "Placement",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name: "user",
+			Name: "default",
 		},
 		Spec: schedulingv1alpha1.PlacementSpec{
 			LocationResource: schedulingv1alpha1.GroupVersionResource{
@@ -127,9 +116,7 @@ func TestUserCluster(t *testing.T) {
 			NamespaceSelector: &metav1.LabelSelector{},
 		},
 	}
-	_, err = test.Client().Kcp().SchedulingV1alpha1().Cluster(cluster).Placements().
-		Create(test.Ctx(), placement, metav1.CreateOptions{})
-	test.Expect(err).NotTo(HaveOccurred())
+	createOrUpdatePlacement(test, cluster, placement)
 
 	// Create the integration namespace
 	namespace := test.NewTestNamespace(InWorkspace[*corev1.Namespace](workspace))
@@ -166,4 +153,20 @@ from:
 			WithTransform(ConditionStatus(camelv1.IntegrationConditionReady), Equal(corev1.ConditionTrue)),
 			WithTransform(IntegrationReplicas, Equal(1)),
 		))
+}
+
+func createOrUpdatePlacement(test Test, cluster logicalcluster.Path, placement *schedulingv1alpha1.Placement) {
+	_, err := test.Client().Kcp().Cluster(cluster).SchedulingV1alpha1().Placements().Create(test.Ctx(), placement, metav1.CreateOptions{})
+	test.Expect(err).To(Or(Not(HaveOccurred()), WithTransform(errors.IsAlreadyExists, BeTrue())))
+
+	if errors.IsAlreadyExists(err) {
+		existing, err := test.Client().Kcp().Cluster(cluster).SchedulingV1alpha1().Placements().Get(test.Ctx(), placement.Name, metav1.GetOptions{})
+		test.Expect(err).NotTo(HaveOccurred())
+
+		placement.ResourceVersion = existing.ResourceVersion
+
+		// It may be needed to retry on conflicts
+		_, err = test.Client().Kcp().Cluster(cluster).SchedulingV1alpha1().Placements().Update(test.Ctx(), placement, metav1.UpdateOptions{})
+		test.Expect(err).NotTo(HaveOccurred())
+	}
 }
