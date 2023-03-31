@@ -1,0 +1,171 @@
+# ---------------------------------------------------------------------------
+# Licensed to the Apache Software Foundation (ASF) under one or more
+# contributor license agreements.  See the NOTICE file distributed with
+# this work for additional information regarding copyright ownership.
+# The ASF licenses this file to You under the Apache License, Version 2.0
+# (the "License"); you may not use this file except in compliance with
+# the License.  You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+# ---------------------------------------------------------------------------
+
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: kcp
+  namespace: kcp
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 10Gi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: kcp
+  namespace: kcp
+  annotations:
+    service.beta.openshift.io/serving-cert-secret-name: kcp-cert
+  labels:
+    app: kcp
+spec:
+  ports:
+    - protocol: TCP
+      name: kcp
+      port: 6443
+      targetPort: 6443
+  selector:
+    app: kcp
+---
+kind: Route
+apiVersion: route.openshift.io/v1
+metadata:
+  name: kcp
+  namespace: kcp
+spec:
+  host: >-
+    kcp.$(EXTERNAL_HOSTNAME)
+  to:
+    kind: Service
+    name: kcp
+  port:
+    targetPort: kcp
+  tls:
+    termination: reencrypt
+    insecureEdgeTerminationPolicy: Redirect
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: kcp-root-ca
+  namespace: kcp
+data:
+  service-ca.crt: |
+    -----BEGIN CERTIFICATE-----
+    -----END CERTIFICATE-----
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: kcp
+  namespace: kcp
+  labels:
+    app: kcp
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: kcp
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: kcp
+    spec:
+      securityContext:
+        runAsNonRoot: true
+      containers:
+        - name: kcp
+          image: ghcr.io/kcp-dev/kcp@sha256:2fb8c31eb8aa6182c8d73aaccc509e85e1e022aa5a8b1bd8a3356f0f018307c8
+          securityContext:
+            allowPrivilegeEscalation: false
+          ports:
+            - containerPort: 6443
+          args:
+            - start
+            - --root-directory=/etc/kcp/config
+            - --shard-base-url=https://kcp:6443
+            - --shard-external-url=https://kcp.$(EXTERNAL_HOSTNAME):443
+            - --external-hostname=kcp.$(EXTERNAL_HOSTNAME):443
+            - --shard-virtual-workspace-url=https://kcp.$(EXTERNAL_HOSTNAME):443
+            - --tls-private-key-file=/etc/kcp/tls/server/tls.key
+            - --tls-cert-file=/etc/kcp/tls/server/tls.crt
+            - --root-ca-file=/etc/kcp/tls/ca/service-ca.crt
+            - --feature-gates=KCPSyncerTunnel=true
+            - --oidc-issuer-url=https://dex.$(EXTERNAL_HOSTNAME)
+            - --oidc-ca-file=/etc/kcp/tls/ca/service-ca.crt
+            - --oidc-client-id=camel
+            - --oidc-username-claim=email
+          env:
+            - name: EXTERNAL_HOSTNAME
+              value: ""
+          livenessProbe:
+            failureThreshold: 3
+            httpGet:
+              path: livez
+              port: 6443
+              scheme: HTTPS
+            initialDelaySeconds: 45
+            periodSeconds: 10
+            successThreshold: 1
+            timeoutSeconds: 10
+          startupProbe:
+            httpGet:
+              path: readyz
+              port: 6443
+              scheme: HTTPS
+            initialDelaySeconds: 10
+            timeoutSeconds: 1
+            periodSeconds: 10
+            successThreshold: 1
+            failureThreshold: 18
+          readinessProbe:
+            failureThreshold: 3
+            httpGet:
+              path: readyz
+              port: 6443
+              scheme: HTTPS
+          resources:
+            limits:
+              cpu: "2"
+              memory: 2Gi
+            requests:
+              cpu: "1"
+              memory: 1Gi
+          volumeMounts:
+            - name: kcp
+              mountPath: /etc/kcp/config
+            - name: cert
+              mountPath: /etc/kcp/tls/server
+            - name: root-ca
+              mountPath: /etc/kcp/tls/ca
+      volumes:
+        - name: kcp
+          persistentVolumeClaim:
+            claimName: kcp
+        - name: cert
+          secret:
+            secretName: kcp-cert
+        - name: root-ca
+          configMap:
+            name: kcp-root-ca
