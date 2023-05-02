@@ -36,8 +36,6 @@ on:
       - '**.adoc'
       - '**.md'
       - 'LICENSE'
-  schedule:
-    - cron: '0 12 * * *'
 
 concurrency:
   group: ${{ github.head_ref }}-${{ github.workflow }}
