@@ -177,7 +177,7 @@ replace (
 
 replace (
 	github.com/kcp-dev/kcp/pkg/apis => github.com/kcp-dev/kcp/pkg/apis v0.11.0
-	sigs.k8s.io/controller-runtime => ./controller-runtime
+	sigs.k8s.io/controller-runtime => github.com/kcp-dev/controller-runtime v0.12.2-0.20230314180200-81840342830d
 )
 
 replace (
