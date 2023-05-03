@@ -1,6 +1,3 @@
 [submodule "camel-k"]
 	path = camel-k
 	url = https://github.com/astefanutti/camel-k
-[submodule "controller-runtime"]
-	path = controller-runtime
-	url = https://github.com/astefanutti/controller-runtime
